@@ -1,6 +1,8 @@
-package cert
+package crt
 
-import "net"
+import (
+	"net"
+)
 
 func deduplicateips(ips []net.IP) []net.IP {
 	encountered := map[string]bool{}

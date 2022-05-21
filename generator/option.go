@@ -4,7 +4,7 @@ import (
 	"crypto"
 	"crypto/x509"
 
-	"github.com/shipengqi/crt/key"
+	"github.com/shipengqi/crt"
 )
 
 type Option interface {
@@ -26,12 +26,12 @@ func WithWriter(writer Writer) Option {
 }
 
 // WithKeyType is used to set the private key generator of the Generator.
-func WithKeyType(t key.Type) Option {
-	var keyG key.Interface
-	if t == key.EcdsaKeyType {
-		keyG = key.NewEcdsaKey()
+func WithKeyType(t crt.Type) Option {
+	var keyG crt.Interface
+	if t == crt.EcdsaKeyType {
+		keyG = crt.NewEcdsaKey()
 	} else {
-		keyG = key.NewRsaKey(key.DefaultKeyLength)
+		keyG = crt.NewRsaKey(crt.RecommendedKeyLength)
 	}
 	return optionFunc(func(g *Generator) {
 		g.keyGen = keyG

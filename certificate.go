@@ -1,4 +1,4 @@
-package cert
+package crt
 
 import (
 	"crypto/x509"
@@ -60,6 +60,7 @@ func NewClientCert(opts ...Option) *Certificate {
 	cn, _ := os.Hostname()
 	defaults := []Option{
 		WithCN(cn),
+		WithKeyUsage(x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment),
 	}
 	defaults = append(defaults, opts...)
 	merged := append(defaults,
@@ -74,6 +75,7 @@ func NewServerCert(opts ...Option) *Certificate {
 	cn, _ := os.Hostname()
 	defaults := []Option{
 		WithCN(cn),
+		WithKeyUsage(x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment),
 	}
 	defaults = append(defaults, opts...)
 	merged := append(defaults,

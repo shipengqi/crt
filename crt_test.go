@@ -1,94 +1,120 @@
 package crt_test
 
 import (
-	"bytes"
 	"crypto/x509"
-	"os/exec"
+	"os"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
 	. "github.com/shipengqi/crt"
+
 	"github.com/shipengqi/crt/generator"
 )
 
-var _ = Describe("CRT CTL", func() {
-	Describe("Generator", func() {
-		Describe("FileWriter", Ordered, func() {
-			gg := generator.New()
-			caPath := "generator.file.ca.crt"
-			caKeyPath := "generator.file.ca.key"
-			serverCrtPath := "generator.file.server.crt"
-			serverKeyPath := "generator.file.server.key"
-			clientCrtPath := "generator.file.client.crt"
-			clientKeyPath := "generator.file.client.key"
-			Context("Create CA certificate", func() {
-				It("New(), should return nil", func() {
-					cert := New(WithCAType())
-					err := gg.CreateAndWrite(cert, caPath, caKeyPath)
-					Expect(err).To(BeNil())
-				})
-				It("NewCACert(), should return nil", func() {
-					cert := NewCACert()
-					err := gg.CreateAndWrite(cert, caPath, caKeyPath)
-					Expect(err).To(BeNil())
-				})
+var _ = Describe("Certificates Generator", func() {
+	Describe("FileWriter", func() {
+		gg := generator.New()
+		var filelist []string
+		AfterEach(func() {
+			for _, v := range filelist {
+				_ = os.Remove(v)
+			}
+			filelist = []string{}
+		})
+		caPath := "testdata/ca.crt"
+		caKeyPath := "testdata/ca.key"
+		serverCrtPath := "testdata/server.crt"
+		serverKeyPath := "testdata/server.key"
+		clientCrtPath := "testdata/client.crt"
+		clientKeyPath := "testdata/client.key"
+		Context("Create CA certificate", func() {
+			It("New(), should return nil", func() {
+				filelist = append(filelist, caPath, caKeyPath)
+				cert := New(WithCAType())
+				err := gg.CreateAndWrite(cert, caPath, caKeyPath)
+				Expect(err).To(BeNil())
+
+				parsedCert, err := parseCertFile(caPath)
+				Expect(err).To(BeNil())
+				Expect(parsedCert.IsCA).To(BeTrue())
+				Expect(parsedCert.Issuer.CommonName).To(BeEmpty())
+				Expect(parsedCert.NotBefore.Add(24 * 366 * 10 * time.Hour)).To(Equal(parsedCert.NotAfter))
 			})
-			Context("Create Server certificate", func() {
-				It("New(), should return error: certificate or private key is not provided", func() {
-					cert := New(
-						WithServerType(),
-						WithKeyUsage(x509.KeyUsageDigitalSignature|x509.KeyUsageKeyEncipherment),
-						WithExtKeyUsages(x509.ExtKeyUsageServerAuth),
-					)
-					err := gg.CreateAndWrite(cert, serverCrtPath, serverKeyPath)
-					Expect(err.Error()).To(Equal("x509: certificate or private key is not provided"))
-				})
-				It("New(), should return nil", func() {
-					ca, _ := ParseCertFile(caPath)
-					key, _ := ParseKeyFile(caKeyPath)
-					gg.SetCA(ca, key)
-					cert := New(
-						WithServerType(),
-						WithKeyUsage(x509.KeyUsageDigitalSignature|x509.KeyUsageKeyEncipherment),
-						WithExtKeyUsages(x509.ExtKeyUsageServerAuth),
-					)
-					err := gg.CreateAndWrite(cert, serverCrtPath, serverKeyPath)
-					Expect(err).To(BeNil())
-				})
-			})
-			Context("Create Client certificate", func() {
-				It("New(), should return nil", func() {
-					cert := New(
-						WithClientType(),
-						WithKeyUsage(x509.KeyUsageDigitalSignature|x509.KeyUsageKeyEncipherment),
-						WithExtKeyUsages(x509.ExtKeyUsageClientAuth),
-					)
-					err := gg.CreateAndWrite(cert, clientCrtPath, clientKeyPath)
-					Expect(err).To(BeNil())
-				})
-			})
-			AfterAll(func() {
-				_, _, _ = deleteLocalFile("./generator.file.*")
+			It("NewCACert(), should return nil", func() {
+				filelist = append(filelist, caPath, caKeyPath)
+				cert := NewCACert()
+				err := gg.CreateAndWrite(cert, caPath, caKeyPath)
+				Expect(err).To(BeNil())
+
+				parsedCert, err := parseCertFile(caPath)
+				Expect(err).To(BeNil())
+				Expect(parsedCert.IsCA).To(BeTrue())
+				Expect(parsedCert.Issuer.CommonName).To(Equal("CRT GENERATOR CA"))
+				Expect(parsedCert.Subject.CommonName).To(Equal("CRT GENERATOR CA"))
+				Expect(parsedCert.NotBefore.Add(24 * 366 * 10 * time.Hour)).To(Equal(parsedCert.NotAfter))
 			})
 		})
-		Describe("SecretWriter", func() {})
-	})
-	Describe("Create", func() {})
-	Describe("Check", func() {})
-	Describe("Update", func() {})
-	Describe("Apply", func() {})
-})
+		Context("Create Server certificate", func() {
+			It("New(), should return error: CA certificate or private key is not provided", func() {
+				filelist = append(filelist, serverCrtPath, serverKeyPath)
+				cert := New(
+					WithServerType(),
+					WithKeyUsage(x509.KeyUsageDigitalSignature|x509.KeyUsageKeyEncipherment),
+					WithExtKeyUsages(x509.ExtKeyUsageServerAuth),
+				)
+				err := gg.CreateAndWrite(cert, serverCrtPath, serverKeyPath)
+				Expect(err.Error()).To(Equal("x509: CA certificate or private key is not provided"))
+			})
+			It("New(), should return nil", func() {
+				filelist = append(filelist, caPath, caKeyPath, serverCrtPath, serverKeyPath)
+				cacrt := NewCACert()
+				cablock, keyblock, err := gg.Create(cacrt)
+				Expect(err).To(BeNil())
+				ca, _ := parseCertBytes(cablock)
+				key, _ := parseKeyBytes(keyblock)
+				gg.SetCA(ca, key)
+				cert := New(
+					WithServerType(),
+					WithKeyUsage(x509.KeyUsageDigitalSignature|x509.KeyUsageKeyEncipherment),
+					WithExtKeyUsages(x509.ExtKeyUsageServerAuth),
+				)
+				err = gg.CreateAndWrite(cert, serverCrtPath, serverKeyPath)
+				Expect(err).To(BeNil())
 
-func deleteLocalFile(path string) (string, string, error) {
-	By("Running command: rm -rf " + path)
-	cmd := exec.Command("rm", "-rf", path)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	err := cmd.Run()
-	By("\tSTDOUT: " + stdout.String())
-	By("\tSTDERR: " + stderr.String())
-	Expect(err).Should(BeNil())
-	return stdout.String(), stderr.String(), err
-}
+				parsedCert, err := parseCertFile(serverCrtPath)
+				Expect(err).To(BeNil())
+				Expect(parsedCert.IsCA).To(BeFalse())
+				Expect(parsedCert.Issuer.CommonName).To(Equal("CRT GENERATOR CA"))
+				Expect(parsedCert.Subject.CommonName).To(BeEmpty())
+				Expect(parsedCert.NotBefore.Add(365 * 24 * time.Hour)).To(Equal(parsedCert.NotAfter))
+			})
+		})
+		Context("Create Client certificate", func() {
+			It("New(), should return nil", func() {
+				filelist = append(filelist, caPath, caKeyPath, clientCrtPath, clientKeyPath)
+				cacrt := NewCACert()
+				cablock, keyblock, err := gg.Create(cacrt)
+				Expect(err).To(BeNil())
+				ca, _ := parseCertBytes(cablock)
+				key, _ := parseKeyBytes(keyblock)
+				gg.SetCA(ca, key)
+
+				cert := New(
+					WithClientType(),
+					WithKeyUsage(x509.KeyUsageDigitalSignature|x509.KeyUsageKeyEncipherment),
+					WithExtKeyUsages(x509.ExtKeyUsageClientAuth),
+				)
+				err = gg.CreateAndWrite(cert, clientCrtPath, clientKeyPath)
+				Expect(err).To(BeNil())
+
+				parsedCert, err := parseCertFile(clientCrtPath)
+				Expect(err).To(BeNil())
+				Expect(parsedCert.IsCA).To(BeFalse())
+				Expect(parsedCert.Issuer.CommonName).To(Equal("CRT GENERATOR CA"))
+				Expect(parsedCert.Subject.CommonName).To(BeEmpty())
+				Expect(parsedCert.NotBefore.Add(365 * 24 * time.Hour)).To(Equal(parsedCert.NotAfter))
+			})
+		})
+	})
+})

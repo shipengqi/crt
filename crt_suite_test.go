@@ -10,5 +10,5 @@ import (
 func TestCrt(t *testing.T) {
 	// config.DefaultReporterConfig.SlowSpecThreshold = 30
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "CRT CTL")
+	RunSpecs(t, "CRT")
 }

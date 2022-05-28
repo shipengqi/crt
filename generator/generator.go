@@ -8,6 +8,7 @@ import (
 	"errors"
 
 	"github.com/shipengqi/crt"
+	"github.com/shipengqi/crt/key"
 )
 
 type WriteTo struct {
@@ -16,7 +17,7 @@ type WriteTo struct {
 }
 
 type Generator struct {
-	keyGen crt.Interface
+	keyG   key.Interface
 	writer Writer
 	ca     *x509.Certificate
 	caKey  crypto.PrivateKey
@@ -26,7 +27,7 @@ type Generator struct {
 func New(opts ...Option) *Generator {
 	g := &Generator{
 		writer: NewFileWriter(),
-		keyGen: crt.NewRsaKey(crt.RecommendedKeyLength),
+		keyG:   key.NewRsaKey(key.RecommendedKeyLength),
 	}
 	g.withOptions(opts...)
 	return g
@@ -42,18 +43,18 @@ func (g *Generator) SetCA(ca *x509.Certificate, key crypto.PrivateKey) {
 func (g *Generator) Create(c *crt.Certificate) ([]byte, []byte, error) {
 	ca := g.ca
 	caKey := g.caKey
-	signer, err := g.keyGen.Gen()
+	signer, err := g.keyG.Gen()
 	if err != nil {
 		return nil, nil, err
 	}
 	pub := signer.Public()
-	encoded := g.keyGen.Encode(signer)
+	encoded := g.keyG.Encode(signer)
 	x509crt := c.Gen()
 	if c.IsCA() { // set CA and ca key, for generating ca.crt and ca.key
 		ca = x509crt
 		caKey = signer
 	} else if ca == nil || caKey == nil {
-		return nil, nil, errors.New("x509: certificate or private key is not provided")
+		return nil, nil, errors.New("x509: CA certificate or private key is not provided")
 	}
 
 	v3crt, err := x509.CreateCertificate(rand.Reader, x509crt, ca, pub, caKey)

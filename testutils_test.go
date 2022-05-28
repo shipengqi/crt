@@ -5,28 +5,21 @@ import (
 	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/x509"
-	"encoding/base64"
 	"encoding/pem"
 	"errors"
 	"io/ioutil"
 )
 
-// ParseCertFile parses x509.Certificate from the given file.
-// The data is expected to be PEM Encoded and contain one certificate
-// with PEM type "CERTIFICATE".
-func ParseCertFile(fpath string) (*x509.Certificate, error) {
+func parseCertFile(fpath string) (*x509.Certificate, error) {
 	bs, err := ioutil.ReadFile(fpath)
 	if err != nil {
 		return nil, err
 	}
 
-	return ParseCertBytes(bs)
+	return parseCertBytes(bs)
 }
 
-// ParseCertBytes parses a single x509.Certificate from the given data.
-// The data is expected to be PEM Encoded and contain one certificate
-// with PEM type "CERTIFICATE".
-func ParseCertBytes(data []byte) (*x509.Certificate, error) {
+func parseCertBytes(data []byte) (*x509.Certificate, error) {
 	if len(data) == 0 {
 		return nil, nil
 	}
@@ -41,49 +34,11 @@ func ParseCertBytes(data []byte) (*x509.Certificate, error) {
 	return cert, nil
 }
 
-// ParseKeyFile parses an unencrypted crypto.PrivateKey from the given file.
-func ParseKeyFile(fpath string) (crypto.PrivateKey, error) {
-	f, err := ioutil.ReadFile(fpath)
-	if err != nil {
-		return nil, err
-	}
-	return ParseKeyBytes(f, false)
-}
 
-// ParseKeyFileWithPass parses an unencrypted crypto.PrivateKey from the given file.
-func ParseKeyFileWithPass(keyPath, keyPass string) (crypto.PrivateKey, error) {
-	f, err := ioutil.ReadFile(keyPath)
-	if err != nil {
-		return nil, err
-	}
-	return parseKeyBytes(f, []byte(keyPass), false)
-}
-
-// ParseKeyBytes parses an unencrypted crypto.PrivateKey from the given data.
-func ParseKeyBytes(data []byte, isBase64 bool) (crypto.PrivateKey, error) {
-	return parseKeyBytes(data, nil, isBase64)
-}
-
-func parseKeyBytes(key, keypass []byte, isBase64 bool) (crypto.PrivateKey, error) {
+func parseKeyBytes(key []byte) (crypto.PrivateKey, error) {
 	var err error
-	dkeystr := key
-
-	if isBase64 {
-		dkeystr, err = base64.StdEncoding.DecodeString(string(key))
-		if err != nil {
-			return nil, err
-		}
-	}
-	bl, _ := pem.Decode(dkeystr)
-	var keyBytes []byte
-	if x509.IsEncryptedPEMBlock(bl) && len(keypass) > 0 {
-		keyBytes, err = x509.DecryptPEMBlock(bl, keypass)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		keyBytes = bl.Bytes
-	}
+	bl, _ := pem.Decode(key)
+	keyBytes := bl.Bytes
 
 	var pkcs1 *rsa.PrivateKey
 	if pkcs1, err = x509.ParsePKCS1PrivateKey(keyBytes); err == nil {

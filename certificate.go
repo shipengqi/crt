@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	_defaultCACommonName = "CRT CTL CA"
-	_defaultCADuration   = time.Hour * 24 * 365 * 10
+	_defaultCACommonName = "CRT GENERATOR CA"
+	_defaultCADuration   = time.Hour * 24 * 366 * 10
 	_defaultCertDuration = time.Hour * 24 * 365
 )
 

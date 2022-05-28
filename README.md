@@ -1,8 +1,6 @@
-# crt
+# Certificates Generator
 
-## E2E Tests
-
-### Running the tests
+## Running the tests
 
 Launch the tests by specifying the configuration (the target system).
 

@@ -4,12 +4,14 @@ import (
 	"os"
 )
 
+// FileWriter implements Writer interface.
 type FileWriter struct {
 	uid   int
 	gid   int
 	fmode os.FileMode
 }
 
+// NewFileWriter creates a new FileWriter with default options.
 func NewFileWriter() *FileWriter {
 	return &FileWriter{
 		uid:   os.Getuid(),

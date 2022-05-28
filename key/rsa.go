@@ -14,7 +14,7 @@ type RsaKey struct {
 
 // NewRsaKey return an RSA key generator.
 // If the bit size less than 2048 bits, set to 2048 bits.
-func NewRsaKey(bits int) Interface {
+func NewRsaKey(bits int) *RsaKey {
 	if bits < DefaultKeyLength {
 		bits = DefaultKeyLength
 	}
@@ -26,7 +26,7 @@ func (g *RsaKey) Gen() (crypto.Signer, error) {
 	return rsa.GenerateKey(rand.Reader, g.bits)
 }
 
-// Encode in pem format.
+// Encode to pem format.
 func (g *RsaKey) Encode(pkey crypto.Signer) []byte {
 	keyPem := &pem.Block{
 		Type:  RsaKeyPrefix,

@@ -11,13 +11,15 @@ import (
 	"github.com/shipengqi/crt/key"
 )
 
+// WriteTo the location where a certificate or private key is to be written.
 type WriteTo struct {
-	Raw []byte
-	To  string
+	Raw []byte // Complete certificate or private key content
+	To  string // Location to be written to
 }
 
+// Generator is the main structure of a generator.
 type Generator struct {
-	keyG   key.Interface
+	keyG   key.Generator
 	writer Writer
 	ca     *x509.Certificate
 	caKey  crypto.PrivateKey
@@ -69,7 +71,7 @@ func (g *Generator) Create(c *crt.Certificate) ([]byte, []byte, error) {
 	return pem.EncodeToMemory(block), encoded, nil
 }
 
-// Write set options for the Generator
+// Write set options for the Generator.
 func (g *Generator) Write(tos []WriteTo) error {
 	for _, v := range tos {
 		err := g.writer.Write(v.Raw, v.To)
@@ -92,7 +94,7 @@ func (g *Generator) CreateAndWrite(c *crt.Certificate, certOutput, keyOutput str
 	})
 }
 
-// withOptions set options for the Generator
+// withOptions set options for the Generator.
 func (g *Generator) withOptions(opts ...Option) {
 	for _, opt := range opts {
 		opt.apply(g)

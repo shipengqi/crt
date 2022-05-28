@@ -7,6 +7,8 @@ import (
 	"github.com/shipengqi/crt/key"
 )
 
+// Option defines optional parameters for initializing the generator
+// structure.
 type Option interface {
 	apply(g *Generator)
 }
@@ -25,14 +27,8 @@ func WithWriter(writer Writer) Option {
 	})
 }
 
-// WithKeyType is used to set the private key generator of the Generator.
-func WithKeyType(t key.Type) Option {
-	var keyG key.Interface
-	if t == key.EcdsaKeyType {
-		keyG = key.NewEcdsaKey()
-	} else {
-		keyG = key.NewRsaKey(key.RecommendedKeyLength)
-	}
+// WithKeyGenerator is used to set the private key generator of the Generator.
+func WithKeyGenerator(keyG key.Generator) Option {
 	return optionFunc(func(g *Generator) {
 		g.keyG = keyG
 	})

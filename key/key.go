@@ -9,14 +9,9 @@ const (
 	RecommendedKeyLength = 4096
 )
 
-const (
-	RsaKeyType Type = iota
-	EcdsaKeyType
-)
-
-type Type int
-
-type Interface interface {
+type Generator interface {
+	// Gen return a crypto.Signer.
 	Gen() (crypto.Signer, error)
+	// Encode to pem format
 	Encode(key crypto.Signer) []byte
 }

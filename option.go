@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+// Option defines optional parameters for initializing the certificate
+// structure.
 type Option interface {
 	apply(c *Certificate)
 }

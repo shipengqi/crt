@@ -119,12 +119,12 @@ func (c *Certificate) IsCA() bool {
 }
 
 // IsClientCert return whether the certificate is a Client certificate.
-func (c *Certificate) IsClientCert(opts ...Option) bool {
+func (c *Certificate) IsClientCert() bool {
 	return c.ctype == _clientType
 }
 
 // IsServerCert return whether the certificate is a Server certificate.
-func (c *Certificate) IsServerCert(opts ...Option) bool {
+func (c *Certificate) IsServerCert() bool {
 	return c.ctype == _serverType
 }
 

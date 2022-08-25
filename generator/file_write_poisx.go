@@ -1,3 +1,5 @@
+// +build poisx
+
 package generator
 
 import (

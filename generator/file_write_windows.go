@@ -6,11 +6,11 @@ import (
 	"io/ioutil"
 )
 
-// Write set options for the Generator.
-func (w *FileWriter) Write(raw []byte, output string) error {
-	err := ioutil.WriteFile(output, raw, w.fmode)
+// Write implements Writer interface.
+func (w *FileWriter) Write(cert, priv []byte, certname, privname string) error {
+	err := ioutil.WriteFile(certname, cert, w.fmode)
 	if err != nil {
 		return err
 	}
-	return nil
+	return ioutil.WriteFile(privname, priv, w.fmode)
 }

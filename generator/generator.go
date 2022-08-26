@@ -11,12 +11,6 @@ import (
 	"github.com/shipengqi/crt/key"
 )
 
-// WriteTo the location where a certificate or private key is to be written.
-type WriteTo struct {
-	Raw []byte // Complete certificate or private key content
-	To  string // Location to be written to
-}
-
 // Generator is the main structure of a generator.
 type Generator struct {
 	keyG   key.Generator
@@ -42,7 +36,7 @@ func (g *Generator) SetCA(ca *x509.Certificate, key crypto.PrivateKey) {
 }
 
 // Create creates a new X.509 v3 certificate and private key based on a template.
-func (g *Generator) Create(c *crt.Certificate) ([]byte, []byte, error) {
+func (g *Generator) Create(c *crt.Certificate) (cert []byte, priv []byte, err error) {
 	ca := g.ca
 	caKey := g.caKey
 	signer, err := g.keyG.Gen()
@@ -50,7 +44,7 @@ func (g *Generator) Create(c *crt.Certificate) ([]byte, []byte, error) {
 		return nil, nil, err
 	}
 	pub := signer.Public()
-	encoded := g.keyG.Encode(signer)
+	priv = g.keyG.Encode(signer)
 	x509crt := c.Gen()
 	if c.IsCA() { // set CA and ca key, for generating ca.crt and ca.key
 		ca = x509crt
@@ -68,30 +62,22 @@ func (g *Generator) Create(c *crt.Certificate) ([]byte, []byte, error) {
 		Type:  "CERTIFICATE",
 		Bytes: v3crt,
 	}
-	return pem.EncodeToMemory(block), encoded, nil
+	cert = pem.EncodeToMemory(block)
+	return cert, priv, nil
 }
 
 // Write set options for the Generator.
-func (g *Generator) Write(tos []WriteTo) error {
-	for _, v := range tos {
-		err := g.writer.Write(v.Raw, v.To)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+func (g *Generator) Write(cert, priv []byte, certname, privname string) error {
+	return g.writer.Write(cert, priv, certname, privname)
 }
 
 // CreateAndWrite creates a new X.509 v3 certificate and private key, then execute the Writer.Write.
-func (g *Generator) CreateAndWrite(c *crt.Certificate, certOutput, keyOutput string) error {
-	certRaw, keyRaw, err := g.Create(c)
+func (g *Generator) CreateAndWrite(c *crt.Certificate, certname, privname string) error {
+	cert, priv, err := g.Create(c)
 	if err != nil {
 		return err
 	}
-	return g.Write([]WriteTo{
-		{Raw: certRaw, To: certOutput},
-		{Raw: keyRaw, To: keyOutput},
-	})
+	return g.Write(cert, priv, certname, privname)
 }
 
 // withOptions set options for the Generator.

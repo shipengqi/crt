@@ -5,6 +5,6 @@ const (
 )
 
 type Writer interface {
-	// Write writes bytes to the given output
-	Write(raw []byte, output string) error
+	// Write writes certificate and private key to the given filenames
+	Write(cert, priv []byte, certname, privname string) error
 }

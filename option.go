@@ -21,43 +21,50 @@ func (fn optionFunc) apply(c *Certificate) {
 
 // WithCN is used to set the CommonName.
 func WithCN(cn string) Option {
-	return optionFunc(func(a *Certificate) {
-		a.cn = cn
+	return optionFunc(func(c *Certificate) {
+		c.cn = cn
 	})
 }
 
 // WithValidity is used to set the validity of the certificate.
 func WithValidity(validity time.Duration) Option {
-	return optionFunc(func(a *Certificate) {
-		a.validity = validity
+	return optionFunc(func(c *Certificate) {
+		c.validity = validity
 	})
 }
 
 // WithDNSNames is used to set the DNS Name values of the certificate.
 func WithDNSNames(dns ...string) Option {
-	return optionFunc(func(a *Certificate) {
-		a.dnsNames = dns
+	return optionFunc(func(c *Certificate) {
+		c.dnsNames = dns
 	})
 }
 
 // WithIPs is used to set the IP Address values of the certificate.
 func WithIPs(ip ...net.IP) Option {
-	return optionFunc(func(a *Certificate) {
-		a.ips = ip
+	return optionFunc(func(c *Certificate) {
+		c.ips = ip
 	})
 }
 
 // WithKeyUsage is used to set the x509.KeyUsage of the certificate.
 func WithKeyUsage(keyUsage x509.KeyUsage) Option {
-	return optionFunc(func(a *Certificate) {
-		a.keyUsage = keyUsage
+	return optionFunc(func(c *Certificate) {
+		c.keyUsage = keyUsage
 	})
 }
 
 // WithExtKeyUsages is used to set the x509.ExtKeyUsage values of the certificate.
 func WithExtKeyUsages(extKeyUsage ...x509.ExtKeyUsage) Option {
-	return optionFunc(func(a *Certificate) {
-		a.extKeyUsages = extKeyUsage
+	return optionFunc(func(c *Certificate) {
+		c.extKeyUsages = extKeyUsage
+	})
+}
+
+// WithOrganizations is used to set the Organization values of the certificate.
+func WithOrganizations(org ...string) Option {
+	return optionFunc(func(c *Certificate) {
+		c.organizations = org
 	})
 }
 
@@ -77,13 +84,13 @@ func WithClientType() Option {
 }
 
 func withType(t int) Option {
-	return optionFunc(func(a *Certificate) {
-		a.ctype = t
+	return optionFunc(func(c *Certificate) {
+		c.ctype = t
 	})
 }
 
 func appendExtKeyUsages(extKeyUsage ...x509.ExtKeyUsage) Option {
-	return optionFunc(func(a *Certificate) {
-		a.extKeyUsages = append(a.extKeyUsages, extKeyUsage...)
+	return optionFunc(func(c *Certificate) {
+		c.extKeyUsages = append(c.extKeyUsages, extKeyUsage...)
 	})
 }

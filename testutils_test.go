@@ -8,6 +8,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"io/ioutil"
+	"os"
 )
 
 func parseCertFile(fpath string) (*x509.Certificate, error) {
@@ -60,4 +61,11 @@ func parseKeyBytes(key []byte) (crypto.PrivateKey, error) {
 		return eck, nil
 	}
 	return nil, err
+}
+
+func cleanfiles(files []string) error {
+	for _, v := range files {
+		_ = os.Remove(v)
+	}
+	return nil
 }

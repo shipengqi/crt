@@ -2,61 +2,59 @@ package crt_test
 
 import (
 	"crypto/x509"
-	"os"
+	"testing"
 	"time"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	. "github.com/shipengqi/crt"
+	"github.com/stretchr/testify/assert"
 
+	. "github.com/shipengqi/crt"
 	"github.com/shipengqi/crt/generator"
 )
 
-var _ = Describe("Certificates Generator", func() {
-	Describe("FileWriter", func() {
+var filelist []string
+
+func TestCertificateGenerator(t *testing.T)  {
+	t.Run("FileWriter", func(t *testing.T) {
 		gg := generator.New()
-		var filelist []string
-		AfterEach(func() {
-			for _, v := range filelist {
-				_ = os.Remove(v)
-			}
-			filelist = []string{}
-		})
 		caPath := "testdata/ca.crt"
 		caKeyPath := "testdata/ca.key"
 		serverCrtPath := "testdata/server.crt"
 		serverKeyPath := "testdata/server.key"
 		clientCrtPath := "testdata/client.crt"
 		clientKeyPath := "testdata/client.key"
-		Context("Create CA certificate", func() {
-			It("New(), should return nil", func() {
+		t.Run("Create CA certificate", func(t *testing.T) {
+			t.Run("New(), should return nil", func(t *testing.T) {
 				filelist = append(filelist, caPath, caKeyPath)
 				cert := New(WithCAType())
 				err := gg.CreateAndWrite(cert, caPath, caKeyPath)
-				Expect(err).To(BeNil())
+				assert.Nil(t, err)
 
 				parsedCert, err := parseCertFile(caPath)
-				Expect(err).To(BeNil())
-				Expect(parsedCert.IsCA).To(BeTrue())
-				Expect(parsedCert.Issuer.CommonName).To(BeEmpty())
-				Expect(parsedCert.NotBefore.Add(24 * 366 * 10 * time.Hour)).To(Equal(parsedCert.NotAfter))
+				assert.Nil(t, err)
+				assert.True(t, parsedCert.IsCA)
+				assert.Empty(t, parsedCert.Issuer.CommonName)
+				assert.Equal(t, parsedCert.NotBefore.Add(24 * 366 * 10 * time.Hour), parsedCert.NotAfter)
+				reset()
 			})
-			It("NewCACert(), should return nil", func() {
+
+			t.Run("NewCACert(), should return nil", func(t *testing.T) {
 				filelist = append(filelist, caPath, caKeyPath)
 				cert := NewCACert()
 				err := gg.CreateAndWrite(cert, caPath, caKeyPath)
-				Expect(err).To(BeNil())
+				assert.Nil(t, err)
 
 				parsedCert, err := parseCertFile(caPath)
-				Expect(err).To(BeNil())
-				Expect(parsedCert.IsCA).To(BeTrue())
-				Expect(parsedCert.Issuer.CommonName).To(Equal("CRT GENERATOR CA"))
-				Expect(parsedCert.Subject.CommonName).To(Equal("CRT GENERATOR CA"))
-				Expect(parsedCert.NotBefore.Add(24 * 366 * 10 * time.Hour)).To(Equal(parsedCert.NotAfter))
+				assert.Nil(t, err)
+				assert.True(t, parsedCert.IsCA)
+				assert.Equal(t, "CRT GENERATOR CA", parsedCert.Issuer.CommonName)
+				assert.Equal(t, "CRT GENERATOR CA", parsedCert.Subject.CommonName)
+				assert.Equal(t, parsedCert.NotBefore.Add(24 * 366 * 10 * time.Hour), parsedCert.NotAfter)
+				reset()
 			})
 		})
-		Context("Create Server certificate", func() {
-			It("New(), should return error: CA certificate or private key is not provided", func() {
+
+		t.Run("Create Server certificate", func(t *testing.T) {
+			t.Run("New(), should return error: CA certificate or private key is not provided", func(t *testing.T) {
 				filelist = append(filelist, serverCrtPath, serverKeyPath)
 				cert := New(
 					WithServerType(),
@@ -64,13 +62,15 @@ var _ = Describe("Certificates Generator", func() {
 					WithExtKeyUsages(x509.ExtKeyUsageServerAuth),
 				)
 				err := gg.CreateAndWrite(cert, serverCrtPath, serverKeyPath)
-				Expect(err.Error()).To(Equal("x509: CA certificate or private key is not provided"))
+				assert.Equal(t, "x509: CA certificate or private key is not provided",
+					err.Error())
+				reset()
 			})
-			It("New(), should return nil", func() {
+			t.Run("New(), should return nil", func(t *testing.T) {
 				filelist = append(filelist, caPath, caKeyPath, serverCrtPath, serverKeyPath)
 				cacrt := NewCACert()
 				cablock, keyblock, err := gg.Create(cacrt)
-				Expect(err).To(BeNil())
+				assert.Nil(t, err)
 				ca, _ := parseCertBytes(cablock)
 				key, _ := parseKeyBytes(keyblock)
 				gg.SetCA(ca, key)
@@ -80,22 +80,24 @@ var _ = Describe("Certificates Generator", func() {
 					WithExtKeyUsages(x509.ExtKeyUsageServerAuth),
 				)
 				err = gg.CreateAndWrite(cert, serverCrtPath, serverKeyPath)
-				Expect(err).To(BeNil())
+				assert.Nil(t, err)
 
 				parsedCert, err := parseCertFile(serverCrtPath)
-				Expect(err).To(BeNil())
-				Expect(parsedCert.IsCA).To(BeFalse())
-				Expect(parsedCert.Issuer.CommonName).To(Equal("CRT GENERATOR CA"))
-				Expect(parsedCert.Subject.CommonName).To(BeEmpty())
-				Expect(parsedCert.NotBefore.Add(365 * 24 * time.Hour)).To(Equal(parsedCert.NotAfter))
+				assert.Nil(t, err)
+				assert.False(t, parsedCert.IsCA)
+				assert.Equal(t, "CRT GENERATOR CA", parsedCert.Issuer.CommonName)
+				assert.Empty(t, parsedCert.Subject.CommonName)
+				assert.Equal(t, parsedCert.NotBefore.Add(365 * 24 * time.Hour), parsedCert.NotAfter)
+				reset()
 			})
 		})
-		Context("Create Client certificate", func() {
-			It("New(), should return nil", func() {
+
+		t.Run("Create Client certificate", func(t *testing.T) {
+			t.Run("New(), should return nil", func(t *testing.T) {
 				filelist = append(filelist, caPath, caKeyPath, clientCrtPath, clientKeyPath)
 				cacrt := NewCACert()
 				cablock, keyblock, err := gg.Create(cacrt)
-				Expect(err).To(BeNil())
+				assert.Nil(t, err)
 				ca, _ := parseCertBytes(cablock)
 				key, _ := parseKeyBytes(keyblock)
 				gg.SetCA(ca, key)
@@ -106,15 +108,22 @@ var _ = Describe("Certificates Generator", func() {
 					WithExtKeyUsages(x509.ExtKeyUsageClientAuth),
 				)
 				err = gg.CreateAndWrite(cert, clientCrtPath, clientKeyPath)
-				Expect(err).To(BeNil())
+				assert.Nil(t, err)
 
 				parsedCert, err := parseCertFile(clientCrtPath)
-				Expect(err).To(BeNil())
-				Expect(parsedCert.IsCA).To(BeFalse())
-				Expect(parsedCert.Issuer.CommonName).To(Equal("CRT GENERATOR CA"))
-				Expect(parsedCert.Subject.CommonName).To(BeEmpty())
-				Expect(parsedCert.NotBefore.Add(365 * 24 * time.Hour)).To(Equal(parsedCert.NotAfter))
+				assert.Nil(t, err)
+				assert.False(t, parsedCert.IsCA)
+
+				assert.Equal(t, "CRT GENERATOR CA", parsedCert.Issuer.CommonName)
+				assert.Empty(t, parsedCert.Subject.CommonName)
+				assert.Equal(t, parsedCert.NotBefore.Add(365 * 24 * time.Hour), parsedCert.NotAfter)
+				reset()
 			})
 		})
 	})
-})
+}
+
+func reset()  {
+	_ = cleanfiles(filelist)
+	filelist = []string{}
+}

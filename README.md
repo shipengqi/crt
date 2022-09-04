@@ -12,7 +12,5 @@ You can find the docs at [go docs](https://pkg.go.dev/github.com/shipengqi/crt).
 Launch the tests by specifying the configuration (the target system).
 
 ```bash
-go test
-# or
-ginkgo
+go test -v .
 ```

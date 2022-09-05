@@ -48,9 +48,25 @@ func WithIPs(ip ...net.IP) Option {
 }
 
 // WithKeyUsage is used to set the x509.KeyUsage of the certificate.
-func WithKeyUsage(keyUsage x509.KeyUsage) Option {
+func WithKeyUsage(keyUsage ...x509.KeyUsage) Option {
 	return optionFunc(func(c *Certificate) {
-		c.keyUsage = keyUsage
+		if len(keyUsage) == 0 {
+			return
+		}
+		var merged x509.KeyUsage
+		if len(keyUsage) == 1 {
+			merged = keyUsage[0]
+		} else {
+			merged = keyUsage[0]
+			for i := 1; i < len(keyUsage); i++ {
+				merged = merged | keyUsage[i]
+			}
+		}
+		if c.keyUsage != 0 {
+			c.keyUsage = c.keyUsage | merged
+		} else {
+			c.keyUsage = merged
+		}
 	})
 }
 

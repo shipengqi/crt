@@ -13,7 +13,7 @@ import (
 
 var filelist []string
 
-func TestCertificateGenerator(t *testing.T)  {
+func TestCertificateGenerator(t *testing.T) {
 	t.Run("FileWriter", func(t *testing.T) {
 		gg := generator.New()
 		caPath := "testdata/ca.crt"
@@ -33,7 +33,7 @@ func TestCertificateGenerator(t *testing.T)  {
 				assert.Nil(t, err)
 				assert.True(t, parsedCert.IsCA)
 				assert.Empty(t, parsedCert.Issuer.CommonName)
-				assert.Equal(t, parsedCert.NotBefore.Add(24 * 366 * 10 * time.Hour), parsedCert.NotAfter)
+				assert.Equal(t, parsedCert.NotBefore.Add(24*366*10*time.Hour), parsedCert.NotAfter)
 				reset()
 			})
 
@@ -48,7 +48,7 @@ func TestCertificateGenerator(t *testing.T)  {
 				assert.True(t, parsedCert.IsCA)
 				assert.Equal(t, "CRT GENERATOR CA", parsedCert.Issuer.CommonName)
 				assert.Equal(t, "CRT GENERATOR CA", parsedCert.Subject.CommonName)
-				assert.Equal(t, parsedCert.NotBefore.Add(24 * 366 * 10 * time.Hour), parsedCert.NotAfter)
+				assert.Equal(t, parsedCert.NotBefore.Add(24*366*10*time.Hour), parsedCert.NotAfter)
 				reset()
 			})
 		})
@@ -87,7 +87,7 @@ func TestCertificateGenerator(t *testing.T)  {
 				assert.False(t, parsedCert.IsCA)
 				assert.Equal(t, "CRT GENERATOR CA", parsedCert.Issuer.CommonName)
 				assert.Empty(t, parsedCert.Subject.CommonName)
-				assert.Equal(t, parsedCert.NotBefore.Add(365 * 24 * time.Hour), parsedCert.NotAfter)
+				assert.Equal(t, parsedCert.NotBefore.Add(365*24*time.Hour), parsedCert.NotAfter)
 				reset()
 			})
 		})
@@ -116,14 +116,14 @@ func TestCertificateGenerator(t *testing.T)  {
 
 				assert.Equal(t, "CRT GENERATOR CA", parsedCert.Issuer.CommonName)
 				assert.Empty(t, parsedCert.Subject.CommonName)
-				assert.Equal(t, parsedCert.NotBefore.Add(365 * 24 * time.Hour), parsedCert.NotAfter)
+				assert.Equal(t, parsedCert.NotBefore.Add(365*24*time.Hour), parsedCert.NotAfter)
 				reset()
 			})
 		})
 	})
 }
 
-func reset()  {
+func reset() {
 	_ = cleanfiles(filelist)
 	filelist = []string{}
 }

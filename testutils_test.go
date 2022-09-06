@@ -79,7 +79,7 @@ func createGenWithCA(t *testing.T) *generator.Generator {
 	t.Helper()
 
 	g := generator.New()
-	cacert := New(WithCAType())
+	cacert := NewCACert()
 	ca, cakey, err := g.Create(cacert)
 	assert.Nil(t, err)
 	parsedca, err := parseCertBytes(ca)

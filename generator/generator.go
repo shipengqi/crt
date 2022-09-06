@@ -11,13 +11,13 @@ import (
 	"github.com/shipengqi/crt/key"
 )
 
-// WriteOption defines options for Writer.Write.
-type WriteOption struct {
+// WriteOptions defines options for Writer.Write.
+type WriteOptions struct {
 	W Writer
 }
 
-// CreateOption defines options for Generator.Create.
-type CreateOption struct {
+// CreateOptions defines options for Generator.Create.
+type CreateOptions struct {
 	G key.Generator
 }
 
@@ -52,21 +52,21 @@ func (g *Generator) SetCA(ca *x509.Certificate, priv crypto.PrivateKey) {
 
 // Create creates a new X.509 v3 certificate and private key based on a template.
 func (g *Generator) Create(c *crt.Certificate) (cert []byte, priv []byte, err error) {
-	return g.create(c, CreateOption{})
+	return g.create(c, CreateOptions{})
 }
 
-// CreateWithOption creates a new X.509 v3 certificate and private key based on a template.
-func (g *Generator) CreateWithOption(c *crt.Certificate, opt CreateOption) (cert []byte, priv []byte, err error) {
+// CreateWithOptions creates a new X.509 v3 certificate and private key based on a template.
+func (g *Generator) CreateWithOptions(c *crt.Certificate, opt CreateOptions) (cert []byte, priv []byte, err error) {
 	return g.create(c, opt)
 }
 
 // Write writes the certificate and key files by the Writer.
 func (g *Generator) Write(cert, priv []byte, certname, privname string) error {
-	return g.write(cert, priv, certname, privname, WriteOption{})
+	return g.write(cert, priv, certname, privname, WriteOptions{})
 }
 
 // WriteWithOptions writes the certificate and key files by the Writer.
-func (g *Generator) WriteWithOptions(cert, priv []byte, certname, privname string, opt WriteOption) error {
+func (g *Generator) WriteWithOptions(cert, priv []byte, certname, privname string, opt WriteOptions) error {
 	return g.write(cert, priv, certname, privname, opt)
 }
 
@@ -79,7 +79,7 @@ func (g *Generator) CreateAndWrite(c *crt.Certificate, certname, privname string
 	return g.Write(cert, priv, certname, privname)
 }
 
-func (g *Generator) create(c *crt.Certificate, opt CreateOption) (cert []byte, priv []byte, err error) {
+func (g *Generator) create(c *crt.Certificate, opt CreateOptions) (cert []byte, priv []byte, err error) {
 	keyG := g.keyG
 	if opt.G != nil {
 		keyG = opt.G
@@ -114,7 +114,7 @@ func (g *Generator) create(c *crt.Certificate, opt CreateOption) (cert []byte, p
 	return cert, priv, nil
 }
 
-func (g *Generator) write(cert, priv []byte, certname, privname string, opt WriteOption) error {
+func (g *Generator) write(cert, priv []byte, certname, privname string, opt WriteOptions) error {
 	w := g.writer
 	if opt.W != nil {
 		w = opt.W

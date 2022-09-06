@@ -159,7 +159,7 @@ func TestCertificateGenerator(t *testing.T) {
 
 			cert := NewClientCert()
 			kyeg := key.NewEcdsaKey()
-			crtRaw, keyRaw, err := g.CreateWithOption(cert, generator.CreateOption{G: kyeg})
+			crtRaw, keyRaw, err := g.CreateWithOptions(cert, generator.CreateOptions{G: kyeg})
 			assert.Nil(t, err)
 
 			parsedCert, err := parseCertBytes(crtRaw)
@@ -175,7 +175,7 @@ func TestCertificateGenerator(t *testing.T) {
 			_, ok := parsedKey.(*ecdsa.PrivateKey)
 			assert.True(t, ok)
 
-			err = g.WriteWithOptions(crtRaw, keyRaw, "", "", generator.WriteOption{W: &mockwriter{}})
+			err = g.WriteWithOptions(crtRaw, keyRaw, "", "", generator.WriteOptions{W: &mockwriter{}})
 			assert.Nil(t, err)
 		})
 

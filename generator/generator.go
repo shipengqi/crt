@@ -29,10 +29,25 @@ func New(opts ...Option) *Generator {
 	return g
 }
 
+// CA returns the CA pair of the Generator.
+func (g *Generator) CA() (ca *x509.Certificate, priv crypto.PrivateKey) {
+	return g.ca, g.caKey
+}
+
 // SetCA is used to set the CA pair of the Generator.
-func (g *Generator) SetCA(ca *x509.Certificate, key crypto.PrivateKey) {
+func (g *Generator) SetCA(ca *x509.Certificate, priv crypto.PrivateKey) {
 	g.ca = ca
-	g.caKey = key
+	g.caKey = priv
+}
+
+// SetWriter is used to set the Writer of the Generator.
+func (g *Generator) SetWriter(w Writer) {
+	g.writer = w
+}
+
+// SetKeyGenerator is used to set the key.Generator of the Generator.
+func (g *Generator) SetKeyGenerator(gen key.Generator) {
+	g.keyG = gen
 }
 
 // Create creates a new X.509 v3 certificate and private key based on a template.

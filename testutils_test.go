@@ -9,6 +9,11 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"testing"
+
+	. "github.com/shipengqi/crt"
+	"github.com/shipengqi/crt/generator"
+	"github.com/stretchr/testify/assert"
 )
 
 func parseCertFile(fpath string) (*x509.Certificate, error) {
@@ -68,4 +73,20 @@ func cleanfiles(files []string) error {
 		_ = os.Remove(v)
 	}
 	return nil
+}
+
+func createGenWithCA(t *testing.T) *generator.Generator {
+	t.Helper()
+
+	g := generator.New()
+	cacert := New(WithCAType())
+	ca, cakey, err := g.Create(cacert)
+	assert.Nil(t, err)
+	parsedca, err := parseCertBytes(ca)
+	assert.Nil(t, err)
+	parsedcakey, err := parseKeyBytes(cakey)
+	assert.Nil(t, err)
+	g.SetCA(parsedca, parsedcakey)
+
+	return g
 }

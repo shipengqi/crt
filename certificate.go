@@ -17,7 +17,7 @@ const (
 )
 
 const (
-	_caType = iota
+	_caType = iota + 1
 	_clientType
 	_serverType
 )

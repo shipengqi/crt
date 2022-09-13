@@ -182,6 +182,22 @@ func TestCertificateGenerator(t *testing.T) {
 	})
 }
 
+func TestIsServerCert(t *testing.T) {
+	cert := NewServerCert()
+	assert.True(t, cert.IsServerCert())
+
+	cert = New(WithExtKeyUsages(x509.ExtKeyUsageServerAuth))
+	assert.True(t, cert.IsServerCert())
+}
+
+func TestIsClientCert(t *testing.T) {
+	cert := NewClientCert()
+	assert.True(t, cert.IsClientCert())
+
+	cert = New(WithExtKeyUsages(x509.ExtKeyUsageClientAuth))
+	assert.True(t, cert.IsClientCert())
+}
+
 func reset() {
 	_ = cleanfiles(filelist)
 	filelist = []string{}

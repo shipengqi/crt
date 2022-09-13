@@ -120,12 +120,29 @@ func (c *Certificate) IsCA() bool {
 
 // IsClientCert return whether the certificate is a Client certificate.
 func (c *Certificate) IsClientCert() bool {
-	return c.ctype == _clientType
+	if c.ctype == _clientType {
+		return true
+	}
+
+	for _, v := range c.extKeyUsages {
+		if v == x509.ExtKeyUsageClientAuth {
+			return true
+		}
+	}
+	return false
 }
 
 // IsServerCert return whether the certificate is a Server certificate.
 func (c *Certificate) IsServerCert() bool {
-	return c.ctype == _serverType
+	if c.ctype == _serverType {
+		return true
+	}
+	for _, v := range c.extKeyUsages {
+		if v == x509.ExtKeyUsageServerAuth {
+			return true
+		}
+	}
+	return false
 }
 
 // withOptions set options for the Certificate

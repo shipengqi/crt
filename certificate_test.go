@@ -2,7 +2,9 @@ package crt_test
 
 import (
 	"crypto/ecdsa"
+	"crypto/rsa"
 	"crypto/x509"
+	"encoding/pem"
 	"testing"
 	"time"
 
@@ -15,9 +17,9 @@ import (
 
 var filelist []string
 
-type mockwriter struct {}
+type mockwriter struct{}
 
-func (w *mockwriter) Write(cert, priv []byte, certname, privname string) error {return nil}
+func (w *mockwriter) Write(cert, priv []byte, certname, privname string) error { return nil }
 
 func TestCertificateGenerator(t *testing.T) {
 	t.Run("FileWriter", func(t *testing.T) {
@@ -158,14 +160,13 @@ func TestCertificateGenerator(t *testing.T) {
 			g := createGenWithCA(t)
 
 			cert := NewClientCert()
-			kyeg := key.NewEcdsaKey()
-			crtRaw, keyRaw, err := g.CreateWithOptions(cert, generator.CreateOptions{G: kyeg})
+			keyg := key.NewEcdsaKey()
+			crtRaw, keyRaw, err := g.CreateWithOptions(cert, generator.CreateOptions{G: keyg})
 			assert.Nil(t, err)
 
 			parsedCert, err := parseCertBytes(crtRaw)
 			assert.Nil(t, err)
 			assert.False(t, parsedCert.IsCA)
-
 
 			assert.Equal(t, "CRT GENERATOR CA", parsedCert.Issuer.CommonName)
 			assert.NotEmpty(t, parsedCert.Subject.CommonName)
@@ -178,8 +179,47 @@ func TestCertificateGenerator(t *testing.T) {
 			err = g.WriteWithOptions(crtRaw, keyRaw, "", "", generator.WriteOptions{W: &mockwriter{}})
 			assert.Nil(t, err)
 		})
-
 	})
+}
+
+func TestPrivateKeyWithPass(t *testing.T) {
+	testPass := []byte("123456")
+	t.Run("Create RSA private key with passphrase", func(t *testing.T) {
+		g := createGenWithCA(t)
+		keyg := key.NewRsaKey(0)
+		cert := NewServerCert()
+		_, keyRaw, err := g.CreateWithOptions(cert, generator.CreateOptions{G: keyg, KeyPassphrase: testPass})
+		assert.Nil(t, err)
+		encoded := decryptAndEncode(t, keyg, keyRaw, testPass)
+
+		parsedKey, err := parseKeyBytes(encoded)
+		assert.Nil(t, err)
+		_, ok := parsedKey.(*rsa.PrivateKey)
+		assert.True(t, ok)
+	})
+
+	t.Run("Create ECDSA private key with passphrase", func(t *testing.T) {
+		g := createGenWithCA(t)
+		keyg := key.NewEcdsaKey()
+		cert := NewServerCert()
+		_, keyRaw, err := g.CreateWithOptions(cert, generator.CreateOptions{G: keyg, KeyPassphrase: testPass})
+		assert.Nil(t, err)
+		encoded := decryptAndEncode(t, keyg, keyRaw, testPass)
+
+		parsedKey, err := parseKeyBytes(encoded)
+		assert.Nil(t, err)
+		_, ok := parsedKey.(*ecdsa.PrivateKey)
+		assert.True(t, ok)
+	})
+}
+
+func decryptAndEncode(t *testing.T, kg key.Generator, b, pass []byte) []byte {
+	t.Helper()
+	block, _ := pem.Decode(b)
+	//nolint:staticcheck
+	decrypted, _ := x509.DecryptPEMBlock(block, pass)
+	encoded := kg.Encode(decrypted)
+	return encoded
 }
 
 func TestIsServerCert(t *testing.T) {

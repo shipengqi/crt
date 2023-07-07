@@ -13,22 +13,36 @@ type EcdsaKey struct {
 	curve elliptic.Curve
 }
 
-// NewEcdsaKey return a Ecdsa key generator.
+// NewEcdsaKey return an Ecdsa key generator.
 func NewEcdsaKey() *EcdsaKey {
 	return &EcdsaKey{curve: elliptic.P256()}
 }
 
-// Gen return a crypto.Signer.
+// BlockType returns block type "EC PRIVATE KEY"
+func (g *EcdsaKey) BlockType() string {
+	return EcdsaBlockType
+}
+
+// Gen generates a public and private key pair.
+// Returns a crypto.Singer.
 func (g *EcdsaKey) Gen() (crypto.Signer, error) {
 	return ecdsa.GenerateKey(g.curve, rand.Reader)
 }
 
-// Encode to pem format.
-func (g *EcdsaKey) Encode(pkey crypto.Signer) []byte {
-	x509Encoded, _ := x509.MarshalECPrivateKey(pkey.(*ecdsa.PrivateKey))
+// Marshal returns an EC private key in SEC 1, ASN.1 DER form
+// This kind of key is commonly encoded in PEM blocks of type "EC PRIVATE KEY".
+// For PEM blocks, use the Encode method.
+func (g *EcdsaKey) Marshal(pkey crypto.Signer) ([]byte, error) {
+	return x509.MarshalECPrivateKey(pkey.(*ecdsa.PrivateKey))
+}
+
+// Encode returns the PEM encoding of b.
+// If b has invalid headers and cannot be encoded,
+// Encode returns nil.
+func (g *EcdsaKey) Encode(b []byte) []byte {
 	keyPem := &pem.Block{
-		Type:  EcdsaKeyPrefix,
-		Bytes: x509Encoded,
+		Type:  EcdsaBlockType,
+		Bytes: b,
 	}
 
 	return pem.EncodeToMemory(keyPem)

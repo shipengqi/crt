@@ -21,16 +21,31 @@ func NewRsaKey(bits int) *RsaKey {
 	return &RsaKey{bits: bits}
 }
 
-// Gen return a crypto.Signer.
+// BlockType returns block type "EC PRIVATE KEY"
+func (g *RsaKey) BlockType() string {
+	return RsaBlockType
+}
+
+// Gen generates a public and private key pair.
+// Returns a crypto.Singer.
 func (g *RsaKey) Gen() (crypto.Signer, error) {
 	return rsa.GenerateKey(rand.Reader, g.bits)
 }
 
-// Encode to pem format.
-func (g *RsaKey) Encode(pkey crypto.Signer) []byte {
+// Marshal returns an RSA private key in PKCS #1, ASN.1 DER form.
+// This kind of key is commonly encoded in PEM blocks of type "RSA PRIVATE KEY".
+// For PEM blocks, use the Encode method.
+func (g *RsaKey) Marshal(pkey crypto.Signer) ([]byte, error) {
+	return x509.MarshalPKCS1PrivateKey(pkey.(*rsa.PrivateKey)), nil
+}
+
+// Encode returns the PEM encoding of b.
+// If b has invalid headers and cannot be encoded,
+// Encode returns nil.
+func (g *RsaKey) Encode(b []byte) []byte {
 	keyPem := &pem.Block{
-		Type:  RsaKeyPrefix,
-		Bytes: x509.MarshalPKCS1PrivateKey(pkey.(*rsa.PrivateKey)),
+		Type:  RsaBlockType,
+		Bytes: b,
 	}
 
 	return pem.EncodeToMemory(keyPem)

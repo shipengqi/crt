@@ -108,6 +108,7 @@ func (g *Generator) create(c *crt.Certificate, opt CreateOptions) (cert []byte, 
 		return nil, nil, err
 	}
 	if len(opt.KeyPassphrase) > 0 {
+		//nolint:staticcheck
 		eb, err := x509.EncryptPEMBlock(rand.Reader, keyG.BlockType(), b, opt.KeyPassphrase, opt.KeyCipher)
 		if err != nil {
 			return nil, nil, err

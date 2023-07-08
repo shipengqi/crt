@@ -1,9 +1,9 @@
-// +build linux darwin
+//go:build linux || darwin
 
 package generator
 
 import (
-	"io/ioutil"
+	"os"
 	"syscall"
 )
 
@@ -17,7 +17,7 @@ func (w *FileWriter) Write(cert, priv []byte, certname, privname string) error {
 }
 
 func (w *FileWriter) writeAndChown(raw []byte, output string) error {
-	err := ioutil.WriteFile(output, raw, w.fmode)
+	err := os.WriteFile(output, raw, w.fmode)
 	if err != nil {
 		return err
 	}

@@ -11,14 +11,21 @@ import (
 	"github.com/shipengqi/crt/key"
 )
 
+const (
+	DefaultKeyCipher = x509.PEMCipherAES256
+)
+
 // WriteOptions defines options for Writer.Write.
 type WriteOptions struct {
 	W Writer
 }
 
 // CreateOptions defines options for Generator.Create.
+// KeyPassphrase can be nil, otherwise use it to encrypt the private key.
 type CreateOptions struct {
-	G key.Generator
+	G             key.Generator
+	KeyPassphrase []byte
+	KeyCipher     x509.PEMCipher
 }
 
 // Generator is the main structure of a generator.
@@ -55,8 +62,11 @@ func (g *Generator) Create(c *crt.Certificate) (cert []byte, priv []byte, err er
 	return g.create(c, CreateOptions{})
 }
 
-// CreateWithOptions creates a new X.509 v3 certificate and private key based on a template.
+// CreateWithOptions creates a new X.509 v3 certificate and private key based on a template with the given CreateOptions.
 func (g *Generator) CreateWithOptions(c *crt.Certificate, opt CreateOptions) (cert []byte, priv []byte, err error) {
+	if opt.KeyCipher < 1 {
+		opt.KeyCipher = DefaultKeyCipher
+	}
 	return g.create(c, opt)
 }
 
@@ -65,7 +75,7 @@ func (g *Generator) Write(cert, priv []byte, certname, privname string) error {
 	return g.write(cert, priv, certname, privname, WriteOptions{})
 }
 
-// WriteWithOptions writes the certificate and key files by the Writer.
+// WriteWithOptions writes the certificate and key files by the Writer with the given WriteOptions.
 func (g *Generator) WriteWithOptions(cert, priv []byte, certname, privname string, opt WriteOptions) error {
 	return g.write(cert, priv, certname, privname, opt)
 }
@@ -92,7 +102,21 @@ func (g *Generator) create(c *crt.Certificate, opt CreateOptions) (cert []byte, 
 		return nil, nil, err
 	}
 	pub := signer.Public()
-	priv = keyG.Encode(signer)
+
+	b, err := keyG.Marshal(signer)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(opt.KeyPassphrase) > 0 {
+		//nolint:staticcheck
+		eb, err := x509.EncryptPEMBlock(rand.Reader, keyG.BlockType(), b, opt.KeyPassphrase, opt.KeyCipher)
+		if err != nil {
+			return nil, nil, err
+		}
+		priv = pem.EncodeToMemory(eb)
+	} else {
+		priv = keyG.Encode(b)
+	}
 	x509crt := c.Gen()
 	if c.IsCA() { // set CA and ca key, for generating ca.crt and ca.key
 		ca = x509crt

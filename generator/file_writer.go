@@ -21,6 +21,8 @@ func NewFileWriter() *FileWriter {
 }
 
 // SetUid set uid of the output file.
+//
+//nolint:revive
 func (w *FileWriter) SetUid(uid int) {
 	w.uid = uid
 }

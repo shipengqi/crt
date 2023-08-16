@@ -1,10 +1,10 @@
 package crt
 
 import (
+	"crypto/rand"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"math/big"
-	"math/rand"
 	"net"
 	"os"
 	"time"
@@ -91,8 +91,9 @@ func (c *Certificate) Gen() *x509.Certificate {
 		CommonName: c.cn,
 	}
 	subject.Organization = c.organizations
+	n, _ := rand.Int(rand.Reader, big.NewInt(1<<63-1)) // 9223372036854775808 - 1
 	obj := &x509.Certificate{
-		SerialNumber:          big.NewInt(rand.Int63()),
+		SerialNumber:          n,
 		Subject:               subject,
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().Add(c.validity),

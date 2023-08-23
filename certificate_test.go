@@ -160,7 +160,7 @@ func TestCertificateGenerator(t *testing.T) {
 			g := createGenWithCA(t)
 
 			cert := NewClientCert()
-			keyg := key.NewEcdsaKey()
+			keyg := key.NewEcdsaKey(nil)
 			crtRaw, keyRaw, err := g.CreateWithOptions(cert, generator.CreateOptions{G: keyg})
 			assert.Nil(t, err)
 
@@ -188,7 +188,10 @@ func TestPrivateKeyWithPass(t *testing.T) {
 		g := createGenWithCA(t)
 		keyg := key.NewRsaKey(0)
 		cert := NewServerCert()
-		_, keyRaw, err := g.CreateWithOptions(cert, generator.CreateOptions{G: keyg, KeyPassphrase: testPass})
+		_, keyRaw, err := g.CreateWithOptions(cert, generator.CreateOptions{G: keyg, KeyOpts: &key.MarshalOptions{
+			Password: testPass,
+			Format:   "",
+		}})
 		assert.Nil(t, err)
 		encoded := decryptAndEncode(t, keyg, keyRaw, testPass)
 
@@ -200,9 +203,12 @@ func TestPrivateKeyWithPass(t *testing.T) {
 
 	t.Run("Create ECDSA private key with passphrase", func(t *testing.T) {
 		g := createGenWithCA(t)
-		keyg := key.NewEcdsaKey()
+		keyg := key.NewEcdsaKey(nil)
 		cert := NewServerCert()
-		_, keyRaw, err := g.CreateWithOptions(cert, generator.CreateOptions{G: keyg, KeyPassphrase: testPass})
+		_, keyRaw, err := g.CreateWithOptions(cert, generator.CreateOptions{G: keyg, KeyOpts: &key.MarshalOptions{
+			Password: testPass,
+			Format:   "",
+		}})
 		assert.Nil(t, err)
 		encoded := decryptAndEncode(t, keyg, keyRaw, testPass)
 

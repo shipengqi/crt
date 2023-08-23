@@ -14,13 +14,11 @@ type EcdsaKey struct {
 }
 
 // NewEcdsaKey return an Ecdsa key generator.
-func NewEcdsaKey() *EcdsaKey {
-	return &EcdsaKey{curve: elliptic.P256()}
-}
-
-// BlockType returns block type "EC PRIVATE KEY"
-func (g *EcdsaKey) BlockType() string {
-	return EcdsaBlockType
+func NewEcdsaKey(curve elliptic.Curve) *EcdsaKey {
+	if curve == nil {
+		curve = elliptic.P256()
+	}
+	return &EcdsaKey{curve: curve}
 }
 
 // Gen generates a public and private key pair.
@@ -29,17 +27,49 @@ func (g *EcdsaKey) Gen() (crypto.Signer, error) {
 	return ecdsa.GenerateKey(g.curve, rand.Reader)
 }
 
-// Marshal returns an EC private key in SEC 1, ASN.1 DER form
-// This kind of key is commonly encoded in PEM blocks of type "EC PRIVATE KEY".
-// For PEM blocks, use the Encode method.
-func (g *EcdsaKey) Marshal(pkey crypto.Signer) ([]byte, error) {
-	return x509.MarshalECPrivateKey(pkey.(*ecdsa.PrivateKey))
+// Marshal converts an EC private key to SEC 1 or PKCS#8, ASN.1 DER form
+func (g *EcdsaKey) Marshal(pkey crypto.Signer, opts *MarshalOptions) ([]byte, error) {
+	if opts == nil {
+		opts = _defaultMarshalOptions
+	}
+	if opts.Format == PKFormatPKCS1 {
+		return g.MarshalECPrivateKey(pkey.(*ecdsa.PrivateKey), opts.Password)
+	}
+	return g.MarshalPKCS8PrivateKey(pkey)
 }
 
-// Encode returns the PEM encoding of b.
+// MarshalECPrivateKey converts an EC private key to SEC 1, ASN.1 DER form.
+// Returns the private key encoded in PEM blocks.
+func (g *EcdsaKey) MarshalECPrivateKey(pkey *ecdsa.PrivateKey, password []byte) ([]byte, error) {
+	b, err := x509.MarshalECPrivateKey(pkey)
+	if err != nil {
+		return nil, err
+	}
+	if len(password) == 0 {
+		return g.encode(b), nil
+	}
+	//nolint:staticcheck
+	eb, err := x509.EncryptPEMBlock(rand.Reader, EcdsaBlockType, b, password, x509.PEMCipherAES256)
+	if err != nil {
+		return nil, err
+	}
+	return pem.EncodeToMemory(eb), nil
+}
+
+// MarshalPKCS8PrivateKey converts a private key to PKCS #8, ASN.1 DER form.
+// Returns the private key encoded in PEM blocks.
+func (g *EcdsaKey) MarshalPKCS8PrivateKey(pkey any) ([]byte, error) {
+	b, err := x509.MarshalPKCS8PrivateKey(pkey)
+	if err != nil {
+		return nil, err
+	}
+	return g.encode(b), nil
+}
+
+// encode returns the PEM encoding of b.
 // If b has invalid headers and cannot be encoded,
-// Encode returns nil.
-func (g *EcdsaKey) Encode(b []byte) []byte {
+// encode returns nil.
+func (g *EcdsaKey) encode(b []byte) []byte {
 	keyPem := &pem.Block{
 		Type:  EcdsaBlockType,
 		Bytes: b,

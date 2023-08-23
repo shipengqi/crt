@@ -21,11 +21,10 @@ type WriteOptions struct {
 }
 
 // CreateOptions defines options for Generator.Create.
-// KeyPassphrase can be nil, otherwise use it to encrypt the private key.
+// KeyPassword can be nil, otherwise use it to encrypt the private key.
 type CreateOptions struct {
-	G             key.Generator
-	KeyPassphrase []byte
-	KeyCipher     x509.PEMCipher
+	G       key.Generator
+	KeyOpts *key.MarshalOptions
 }
 
 // Generator is the main structure of a generator.
@@ -64,9 +63,6 @@ func (g *Generator) Create(c *crt.Certificate) (cert []byte, priv []byte, err er
 
 // CreateWithOptions creates a new X.509 v3 certificate and private key based on a template with the given CreateOptions.
 func (g *Generator) CreateWithOptions(c *crt.Certificate, opt CreateOptions) (cert []byte, priv []byte, err error) {
-	if opt.KeyCipher < 1 {
-		opt.KeyCipher = DefaultKeyCipher
-	}
 	return g.create(c, opt)
 }
 
@@ -89,10 +85,10 @@ func (g *Generator) CreateAndWrite(c *crt.Certificate, certname, privname string
 	return g.Write(cert, priv, certname, privname)
 }
 
-func (g *Generator) create(c *crt.Certificate, opt CreateOptions) (cert []byte, priv []byte, err error) {
+func (g *Generator) create(c *crt.Certificate, opts CreateOptions) (cert []byte, priv []byte, err error) {
 	keyG := g.keyG
-	if opt.G != nil {
-		keyG = opt.G
+	if opts.G != nil {
+		keyG = opts.G
 	}
 
 	ca := g.ca
@@ -103,19 +99,9 @@ func (g *Generator) create(c *crt.Certificate, opt CreateOptions) (cert []byte, 
 	}
 	pub := signer.Public()
 
-	b, err := keyG.Marshal(signer)
+	priv, err = keyG.Marshal(signer, opts.KeyOpts)
 	if err != nil {
 		return nil, nil, err
-	}
-	if len(opt.KeyPassphrase) > 0 {
-		//nolint:staticcheck
-		eb, err := x509.EncryptPEMBlock(rand.Reader, keyG.BlockType(), b, opt.KeyPassphrase, opt.KeyCipher)
-		if err != nil {
-			return nil, nil, err
-		}
-		priv = pem.EncodeToMemory(eb)
-	} else {
-		priv = keyG.Encode(b)
 	}
 	x509crt := c.Gen()
 	if c.IsCA() { // set CA and ca key, for generating ca.crt and ca.key

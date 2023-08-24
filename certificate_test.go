@@ -227,9 +227,8 @@ func TestPKS8PrivateKey(t *testing.T) {
 			IsPKCS8: true,
 		}})
 		assert.Nil(t, err)
-		encoded := decryptAndEncode(t, keyRaw, testPass, key.PKCCS8BlockType)
 
-		parsedKey, err := parseKeyBytes(encoded)
+		parsedKey, err := parseKeyBytes(keyRaw)
 		assert.Nil(t, err)
 		_, ok := parsedKey.(*rsa.PrivateKey)
 		assert.True(t, ok)
@@ -243,9 +242,8 @@ func TestPKS8PrivateKey(t *testing.T) {
 			IsPKCS8: true,
 		}})
 		assert.Nil(t, err)
-		encoded := decryptAndEncode(t, keyRaw, testPass, key.PKCCS8BlockType)
 
-		parsedKey, err := parseKeyBytes(encoded)
+		parsedKey, err := parseKeyBytes(keyRaw)
 		assert.Nil(t, err)
 		_, ok := parsedKey.(*ecdsa.PrivateKey)
 		assert.True(t, ok)

@@ -12,12 +12,7 @@
 package main
 
 import (
-	"crypto"
-	"crypto/ecdsa"
-	"crypto/rsa"
 	"crypto/x509"
-	"encoding/pem"
-	"errors"
 	"log"
 	"net"
 	"time"
@@ -29,6 +24,9 @@ import (
 
 func main() {
 
+    // ---------------------------------
+	// Create Certificate Examples
+	
 	// create a certificate
 	exCert := crt.New(
 		crt.WithCN("example.com"),
@@ -49,15 +47,19 @@ func main() {
 	// create a CA certificate
 	caCrt := crt.NewCACert()
 
-	// ------------------------
+	// ---------------------------------
+	// Create Generator Examples
+	
 	// create a Generator instance
 	// by default, use RSA key generator
 	g1 := generator.New()
 	// create a Generator instance with specified key generator
 	kgen := key.NewEcdsaKey(nil)
 	g2 := generator.New(generator.WithKeyGenerator(kgen))
+
+	// ---------------------------------
+	// generate Certificate Examples
 	
-	// --------------------------------
 	// generate CA certificate
 	err := g1.CreateAndWrite(caCrt, "ca.crt", "ca.key")
 	if err != nil {
@@ -65,61 +67,15 @@ func main() {
 	}
 	
 	// generate server certificate
-	// set the CA first
-	ca, cakey, err := g1.CreateWithOptions(caCrt, generator.CreateOptions{
+	// set the CA for the generator
+	_, _, err = g1.CreateWithOptions(caCrt, generator.CreateOptions{
 		UseAsCA: true,
 	})
-	err = g1.Write(ca, cakey, "ca.crt", "ca.key")
-	if err != nil {
-		log.Fatalln(err)
-	}
+	// generate server certificate files
 	err = g1.CreateAndWrite(serverCrt, "server.crt", "server.key")
 	if err != nil {
 		log.Fatalln(err)
 	}
-}
-
-func parseCertBytes(data []byte) (*x509.Certificate, error) {
-	if len(data) == 0 {
-		return nil, nil
-	}
-	bl, _ := pem.Decode(data)
-	if bl == nil {
-		return nil, errors.New("no pem data is found")
-	}
-	cert, err := x509.ParseCertificate(bl.Bytes)
-	if err != nil {
-		return nil, err
-	}
-	return cert, nil
-}
-
-
-func parseKeyBytes(pkey []byte) (crypto.PrivateKey, error) {
-	var err error
-	bl, _ := pem.Decode(pkey)
-	keyBytes := bl.Bytes
-
-	var pkcs1 *rsa.PrivateKey
-	if pkcs1, err = x509.ParsePKCS1PrivateKey(keyBytes); err == nil {
-		return pkcs1, nil
-	}
-	var eck *ecdsa.PrivateKey
-	if eck, err = x509.ParseECPrivateKey(keyBytes); err == nil {
-		return eck, nil
-	}
-	
-	var pkcs8 interface{}
-	if pkcs8, err = x509.ParsePKCS8PrivateKey(keyBytes); err == nil {
-		switch pkcs8k := pkcs8.(type) {
-		case *rsa.PrivateKey, *ecdsa.PrivateKey:
-			return pkcs8k, nil
-		default:
-			return nil, errors.New("unknown private key type in PKCS#8 wrapping")
-		}
-	}
-	
-	return nil, err
 }
 ```
 

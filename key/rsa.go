@@ -35,18 +35,18 @@ func (g *RsaKey) Marshal(pkey crypto.Signer, opts *MarshalOptions) ([]byte, erro
 		opts = _defaultMarshalOptions
 	}
 
-	if opts.Format == PKFormatPKCS1 {
+	if !opts.IsPKCS8 {
 		return g.MarshalPKCS1PrivateKey(pkey.(*rsa.PrivateKey), opts.Password)
 	}
 	return g.MarshalPKCS8PrivateKey(pkey)
 }
 
 // MarshalPKCS1PrivateKey converts an RSA private key to PKCS #1, ASN.1 DER form.
-// Returns the private key encoded in PEM blocks.
+// And returns the private key encoded in PEM blocks.
 func (g *RsaKey) MarshalPKCS1PrivateKey(pkey *rsa.PrivateKey, password []byte) ([]byte, error) {
 	b := x509.MarshalPKCS1PrivateKey(pkey)
 	if len(password) == 0 {
-		return g.encode(b), nil
+		return EncodeWithBlockType(b, RsaBlockType), nil
 	}
 	//nolint:staticcheck
 	eb, err := x509.EncryptPEMBlock(rand.Reader, RsaBlockType, b, password, x509.PEMCipherAES256)
@@ -57,23 +57,11 @@ func (g *RsaKey) MarshalPKCS1PrivateKey(pkey *rsa.PrivateKey, password []byte) (
 }
 
 // MarshalPKCS8PrivateKey converts a private key to PKCS #8, ASN.1 DER form.
-// Returns the private key encoded in PEM blocks.
+// And returns the private key encoded in PEM blocks.
 func (g *RsaKey) MarshalPKCS8PrivateKey(pkey any) ([]byte, error) {
 	b, err := x509.MarshalPKCS8PrivateKey(pkey)
 	if err != nil {
 		return nil, err
 	}
-	return g.encode(b), nil
-}
-
-// encode returns the PEM encoding of b.
-// If b has invalid headers and cannot be encoded,
-// encode returns nil.
-func (g *RsaKey) encode(b []byte) []byte {
-	keyPem := &pem.Block{
-		Type:  RsaBlockType,
-		Bytes: b,
-	}
-
-	return pem.EncodeToMemory(keyPem)
+	return EncodeWithBlockType(b, PKCCS8BlockType), nil
 }

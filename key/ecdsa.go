@@ -32,21 +32,21 @@ func (g *EcdsaKey) Marshal(pkey crypto.Signer, opts *MarshalOptions) ([]byte, er
 	if opts == nil {
 		opts = _defaultMarshalOptions
 	}
-	if opts.Format == PKFormatPKCS1 {
+	if !opts.IsPKCS8 {
 		return g.MarshalECPrivateKey(pkey.(*ecdsa.PrivateKey), opts.Password)
 	}
 	return g.MarshalPKCS8PrivateKey(pkey)
 }
 
 // MarshalECPrivateKey converts an EC private key to SEC 1, ASN.1 DER form.
-// Returns the private key encoded in PEM blocks.
+// And returns the private key encoded in PEM blocks.
 func (g *EcdsaKey) MarshalECPrivateKey(pkey *ecdsa.PrivateKey, password []byte) ([]byte, error) {
 	b, err := x509.MarshalECPrivateKey(pkey)
 	if err != nil {
 		return nil, err
 	}
 	if len(password) == 0 {
-		return g.encode(b), nil
+		return EncodeWithBlockType(b, EcdsaBlockType), nil
 	}
 	//nolint:staticcheck
 	eb, err := x509.EncryptPEMBlock(rand.Reader, EcdsaBlockType, b, password, x509.PEMCipherAES256)
@@ -57,23 +57,11 @@ func (g *EcdsaKey) MarshalECPrivateKey(pkey *ecdsa.PrivateKey, password []byte) 
 }
 
 // MarshalPKCS8PrivateKey converts a private key to PKCS #8, ASN.1 DER form.
-// Returns the private key encoded in PEM blocks.
-func (g *EcdsaKey) MarshalPKCS8PrivateKey(pkey any) ([]byte, error) {
+// And returns the private key encoded in PEM blocks.
+func (g *EcdsaKey) MarshalPKCS8PrivateKey(pkey interface{}) ([]byte, error) {
 	b, err := x509.MarshalPKCS8PrivateKey(pkey)
 	if err != nil {
 		return nil, err
 	}
-	return g.encode(b), nil
-}
-
-// encode returns the PEM encoding of b.
-// If b has invalid headers and cannot be encoded,
-// encode returns nil.
-func (g *EcdsaKey) encode(b []byte) []byte {
-	keyPem := &pem.Block{
-		Type:  EcdsaBlockType,
-		Bytes: b,
-	}
-
-	return pem.EncodeToMemory(keyPem)
+	return EncodeWithBlockType(b, PKCCS8BlockType), nil
 }

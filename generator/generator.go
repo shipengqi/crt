@@ -21,10 +21,13 @@ type WriteOptions struct {
 }
 
 // CreateOptions defines options for Generator.Create.
-// KeyPassword can be nil, otherwise use it to encrypt the private key.
+// UseAsCA if true, the given crt.Certificate will be used as the CA
+// certificate for the Generator. If the crt.Certificate is not CA type,
+// UseAsCA will be ignored.
 type CreateOptions struct {
 	G       key.Generator
 	KeyOpts *key.MarshalOptions
+	UseAsCA bool
 }
 
 // Generator is the main structure of a generator.
@@ -42,6 +45,7 @@ func New(opts ...Option) *Generator {
 		keyG:   key.NewRsaKey(key.RecommendedKeyLength),
 	}
 	g.withOptions(opts...)
+
 	return g
 }
 
@@ -62,8 +66,8 @@ func (g *Generator) Create(c *crt.Certificate) (cert []byte, priv []byte, err er
 }
 
 // CreateWithOptions creates a new X.509 v3 certificate and private key based on a template with the given CreateOptions.
-func (g *Generator) CreateWithOptions(c *crt.Certificate, opt CreateOptions) (cert []byte, priv []byte, err error) {
-	return g.create(c, opt)
+func (g *Generator) CreateWithOptions(c *crt.Certificate, opts CreateOptions) (cert []byte, priv []byte, err error) {
+	return g.create(c, opts)
 }
 
 // Write writes the certificate and key files by the Writer.
@@ -72,8 +76,8 @@ func (g *Generator) Write(cert, priv []byte, certname, privname string) error {
 }
 
 // WriteWithOptions writes the certificate and key files by the Writer with the given WriteOptions.
-func (g *Generator) WriteWithOptions(cert, priv []byte, certname, privname string, opt WriteOptions) error {
-	return g.write(cert, priv, certname, privname, opt)
+func (g *Generator) WriteWithOptions(cert, priv []byte, certname, privname string, opts WriteOptions) error {
+	return g.write(cert, priv, certname, privname, opts)
 }
 
 // CreateAndWrite creates a new X.509 v3 certificate and private key, then execute the Writer.Write.
@@ -104,9 +108,14 @@ func (g *Generator) create(c *crt.Certificate, opts CreateOptions) (cert []byte,
 		return nil, nil, err
 	}
 	x509crt := c.Gen()
-	if c.IsCA() { // set CA and ca key, for generating ca.crt and ca.key
+	if c.IsCA() { // if the given cert is CA type, skip checking CA certificate and private key
 		ca = x509crt
 		caKey = signer
+		// set current CA and CA key for the generator
+		if opts.UseAsCA {
+			g.ca = ca
+			g.caKey = caKey
+		}
 	} else if ca == nil || caKey == nil {
 		return nil, nil, errors.New("x509: CA certificate or private key is not provided")
 	}
@@ -124,10 +133,10 @@ func (g *Generator) create(c *crt.Certificate, opts CreateOptions) (cert []byte,
 	return cert, priv, nil
 }
 
-func (g *Generator) write(cert, priv []byte, certname, privname string, opt WriteOptions) error {
+func (g *Generator) write(cert, priv []byte, certname, privname string, opts WriteOptions) error {
 	w := g.writer
-	if opt.W != nil {
-		w = opt.W
+	if opts.W != nil {
+		w = opts.W
 	}
 	return w.Write(cert, priv, certname, privname)
 }

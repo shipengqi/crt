@@ -7,17 +7,17 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
-	"io/ioutil"
 	"os"
 	"testing"
 
 	. "github.com/shipengqi/crt"
 	"github.com/shipengqi/crt/generator"
+
 	"github.com/stretchr/testify/assert"
 )
 
 func parseCertFile(fpath string) (*x509.Certificate, error) {
-	bs, err := ioutil.ReadFile(fpath)
+	bs, err := os.ReadFile(fpath)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +39,6 @@ func parseCertBytes(data []byte) (*x509.Certificate, error) {
 	}
 	return cert, nil
 }
-
 
 func parseKeyBytes(key []byte) (crypto.PrivateKey, error) {
 	var err error
@@ -88,5 +87,17 @@ func createGenWithCA(t *testing.T) *generator.Generator {
 	assert.Nil(t, err)
 	g.SetCA(parsedca, parsedcakey)
 
+	return g
+}
+
+func createGenWithUseAsCA(t *testing.T) *generator.Generator {
+	t.Helper()
+
+	g := generator.New()
+	cacert := NewCACert()
+	_, _, err := g.CreateWithOptions(cacert, generator.CreateOptions{
+		UseAsCA: true,
+	})
+	assert.Nil(t, err)
 	return g
 }

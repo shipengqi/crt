@@ -160,7 +160,7 @@ func TestCertificateGenerator(t *testing.T) {
 			g := createGenWithCA(t)
 
 			cert := NewClientCert()
-			keyg := key.NewEcdsaKey()
+			keyg := key.NewEcdsaKey(nil)
 			crtRaw, keyRaw, err := g.CreateWithOptions(cert, generator.CreateOptions{G: keyg})
 			assert.Nil(t, err)
 
@@ -188,9 +188,11 @@ func TestPrivateKeyWithPass(t *testing.T) {
 		g := createGenWithCA(t)
 		keyg := key.NewRsaKey(0)
 		cert := NewServerCert()
-		_, keyRaw, err := g.CreateWithOptions(cert, generator.CreateOptions{G: keyg, KeyPassphrase: testPass})
+		_, keyRaw, err := g.CreateWithOptions(cert, generator.CreateOptions{G: keyg, KeyOpts: &key.MarshalOptions{
+			Password: testPass,
+		}})
 		assert.Nil(t, err)
-		encoded := decryptAndEncode(t, keyg, keyRaw, testPass)
+		encoded := decryptAndEncode(t, keyRaw, testPass, key.RsaBlockType)
 
 		parsedKey, err := parseKeyBytes(encoded)
 		assert.Nil(t, err)
@@ -200,11 +202,13 @@ func TestPrivateKeyWithPass(t *testing.T) {
 
 	t.Run("Create ECDSA private key with passphrase", func(t *testing.T) {
 		g := createGenWithCA(t)
-		keyg := key.NewEcdsaKey()
+		keyg := key.NewEcdsaKey(nil)
 		cert := NewServerCert()
-		_, keyRaw, err := g.CreateWithOptions(cert, generator.CreateOptions{G: keyg, KeyPassphrase: testPass})
+		_, keyRaw, err := g.CreateWithOptions(cert, generator.CreateOptions{G: keyg, KeyOpts: &key.MarshalOptions{
+			Password: testPass,
+		}})
 		assert.Nil(t, err)
-		encoded := decryptAndEncode(t, keyg, keyRaw, testPass)
+		encoded := decryptAndEncode(t, keyRaw, testPass, key.EcdsaBlockType)
 
 		parsedKey, err := parseKeyBytes(encoded)
 		assert.Nil(t, err)
@@ -213,12 +217,47 @@ func TestPrivateKeyWithPass(t *testing.T) {
 	})
 }
 
-func decryptAndEncode(t *testing.T, kg key.Generator, b, pass []byte) []byte {
+func TestPKS8PrivateKey(t *testing.T) {
+	testPass := []byte("123456")
+	t.Run("Should ignore the passphrase when creating a PKCS#8 RSA private key", func(t *testing.T) {
+		g := createGenWithUseAsCA(t)
+		keyg := key.NewRsaKey(0)
+		cert := NewServerCert()
+		_, keyRaw, err := g.CreateWithOptions(cert, generator.CreateOptions{G: keyg, KeyOpts: &key.MarshalOptions{
+			IsPKCS8:  true,
+			Password: testPass,
+		}})
+		assert.Nil(t, err)
+
+		parsedKey, err := parseKeyBytes(keyRaw)
+		assert.Nil(t, err)
+		_, ok := parsedKey.(*rsa.PrivateKey)
+		assert.True(t, ok)
+	})
+
+	t.Run("Should ignore the passphrase when creating a PKCS#8 ECDSA private key", func(t *testing.T) {
+		g := createGenWithUseAsCA(t)
+		keyg := key.NewEcdsaKey(nil)
+		cert := NewServerCert()
+		_, keyRaw, err := g.CreateWithOptions(cert, generator.CreateOptions{G: keyg, KeyOpts: &key.MarshalOptions{
+			IsPKCS8:  true,
+			Password: testPass,
+		}})
+		assert.Nil(t, err)
+
+		parsedKey, err := parseKeyBytes(keyRaw)
+		assert.Nil(t, err)
+		_, ok := parsedKey.(*ecdsa.PrivateKey)
+		assert.True(t, ok)
+	})
+}
+
+func decryptAndEncode(t *testing.T, b, pass []byte, blockType string) []byte {
 	t.Helper()
 	block, _ := pem.Decode(b)
 	//nolint:staticcheck
 	decrypted, _ := x509.DecryptPEMBlock(block, pass)
-	encoded := kg.Encode(decrypted)
+	encoded := key.EncodeWithBlockType(decrypted, blockType)
 	return encoded
 }
 

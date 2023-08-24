@@ -218,7 +218,6 @@ func TestPrivateKeyWithPass(t *testing.T) {
 }
 
 func TestPKS8PrivateKey(t *testing.T) {
-	testPass := []byte("123456")
 	t.Run("Should ignore the passphrase when creating a PKCS#8 RSA private key", func(t *testing.T) {
 		g := createGenWithUseAsCA(t)
 		keyg := key.NewRsaKey(0)

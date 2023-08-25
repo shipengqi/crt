@@ -19,9 +19,10 @@ var _defaultMarshalOptions = &MarshalOptions{
 
 type Generator interface {
 	// Gen generates a public and private key pair.
-	// Returns a crypto.Singer.
+	// And returns a crypto.Singer.
 	Gen() (crypto.Signer, error)
-	// Marshal returns a private key in ASN.1 DER form
+	// Marshal converts a private key to ASN.1 DER form.
+	// And returns the private key encoded in PEM blocks.
 	// The opts is optional.
 	Marshal(pkey crypto.Signer, opts *MarshalOptions) ([]byte, error)
 }

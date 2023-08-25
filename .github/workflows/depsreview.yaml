@@ -1,15 +1,5 @@
 name: dependency-review
-on:
-  push:
-    branches: [ main ]
-    paths-ignore:
-      - 'docs/**'
-      - 'README.md'
-  pull_request:
-    branches: [ main ]
-    paths-ignore:
-      - 'docs/**'
-      - 'README.md'
+on: [pull_request]
 permissions:
   contents: read
 jobs:

@@ -22,12 +22,13 @@ func NewEcdsaKey(curve elliptic.Curve) *EcdsaKey {
 }
 
 // Gen generates a public and private key pair.
-// Returns a crypto.Singer.
+// And returns a crypto.Singer.
 func (g *EcdsaKey) Gen() (crypto.Signer, error) {
 	return ecdsa.GenerateKey(g.curve, rand.Reader)
 }
 
-// Marshal converts an EC private key to SEC 1 or PKCS#8, ASN.1 DER form
+// Marshal converts an EC private key to SEC 1 or PKCS#8, ASN.1 DER form.
+// And returns the private key encoded in PEM blocks.
 func (g *EcdsaKey) Marshal(pkey crypto.Signer, opts *MarshalOptions) ([]byte, error) {
 	if opts == nil {
 		opts = _defaultMarshalOptions

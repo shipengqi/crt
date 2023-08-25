@@ -11,10 +11,6 @@ import (
 	"github.com/shipengqi/crt/key"
 )
 
-const (
-	DefaultKeyCipher = x509.PEMCipherAES256
-)
-
 // WriteOptions defines options for Writer.Write.
 type WriteOptions struct {
 	W Writer
@@ -50,46 +46,46 @@ func New(opts ...Option) *Generator {
 }
 
 // CA returns the CA pair of the Generator.
-func (g *Generator) CA() (ca *x509.Certificate, priv crypto.PrivateKey) {
+func (g *Generator) CA() (ca *x509.Certificate, pkey crypto.PrivateKey) {
 	return g.ca, g.caKey
 }
 
 // SetCA is used to set the CA pair of the Generator.
-func (g *Generator) SetCA(ca *x509.Certificate, priv crypto.PrivateKey) {
+func (g *Generator) SetCA(ca *x509.Certificate, pkey crypto.PrivateKey) {
 	g.ca = ca
-	g.caKey = priv
+	g.caKey = pkey
 }
 
 // Create creates a new X.509 v3 certificate and private key based on a template.
-func (g *Generator) Create(c *crt.Certificate) (cert []byte, priv []byte, err error) {
+func (g *Generator) Create(c *crt.Certificate) (cert []byte, pkey []byte, err error) {
 	return g.create(c, CreateOptions{})
 }
 
 // CreateWithOptions creates a new X.509 v3 certificate and private key based on a template with the given CreateOptions.
-func (g *Generator) CreateWithOptions(c *crt.Certificate, opts CreateOptions) (cert []byte, priv []byte, err error) {
+func (g *Generator) CreateWithOptions(c *crt.Certificate, opts CreateOptions) (cert []byte, pkey []byte, err error) {
 	return g.create(c, opts)
 }
 
 // Write writes the certificate and key files by the Writer.
-func (g *Generator) Write(cert, priv []byte, certname, privname string) error {
-	return g.write(cert, priv, certname, privname, WriteOptions{})
+func (g *Generator) Write(cert, pkey []byte, certname, pkeyname string) error {
+	return g.write(cert, pkey, certname, pkeyname, WriteOptions{})
 }
 
 // WriteWithOptions writes the certificate and key files by the Writer with the given WriteOptions.
-func (g *Generator) WriteWithOptions(cert, priv []byte, certname, privname string, opts WriteOptions) error {
-	return g.write(cert, priv, certname, privname, opts)
+func (g *Generator) WriteWithOptions(cert, pkey []byte, certname, pkeyname string, opts WriteOptions) error {
+	return g.write(cert, pkey, certname, pkeyname, opts)
 }
 
 // CreateAndWrite creates a new X.509 v3 certificate and private key, then execute the Writer.Write.
-func (g *Generator) CreateAndWrite(c *crt.Certificate, certname, privname string) error {
-	cert, priv, err := g.Create(c)
+func (g *Generator) CreateAndWrite(c *crt.Certificate, certname, pkeyname string) error {
+	cert, pkey, err := g.Create(c)
 	if err != nil {
 		return err
 	}
-	return g.Write(cert, priv, certname, privname)
+	return g.Write(cert, pkey, certname, pkeyname)
 }
 
-func (g *Generator) create(c *crt.Certificate, opts CreateOptions) (cert []byte, priv []byte, err error) {
+func (g *Generator) create(c *crt.Certificate, opts CreateOptions) (cert []byte, pkey []byte, err error) {
 	keyG := g.keyG
 	if opts.G != nil {
 		keyG = opts.G
@@ -103,7 +99,7 @@ func (g *Generator) create(c *crt.Certificate, opts CreateOptions) (cert []byte,
 	}
 	pub := signer.Public()
 
-	priv, err = keyG.Marshal(signer, opts.KeyOpts)
+	pkey, err = keyG.Marshal(signer, opts.KeyOpts)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -130,15 +126,15 @@ func (g *Generator) create(c *crt.Certificate, opts CreateOptions) (cert []byte,
 		Bytes: v3crt,
 	}
 	cert = pem.EncodeToMemory(block)
-	return cert, priv, nil
+	return cert, pkey, nil
 }
 
-func (g *Generator) write(cert, priv []byte, certname, privname string, opts WriteOptions) error {
+func (g *Generator) write(cert, pkey []byte, certname, pkeyname string, opts WriteOptions) error {
 	w := g.writer
 	if opts.W != nil {
 		w = opts.W
 	}
-	return w.Write(cert, priv, certname, privname)
+	return w.Write(cert, pkey, certname, pkeyname)
 }
 
 // withOptions set options for the Generator.

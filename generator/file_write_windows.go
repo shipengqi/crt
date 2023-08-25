@@ -5,10 +5,10 @@ import (
 )
 
 // Write implements Writer interface.
-func (w *FileWriter) Write(cert, priv []byte, certname, privname string) error {
+func (w *FileWriter) Write(cert, pkey []byte, certname, privname string) error {
 	err := os.WriteFile(certname, cert, w.fmode)
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(privname, priv, w.fmode)
+	return os.WriteFile(privname, pkey, w.fmode)
 }

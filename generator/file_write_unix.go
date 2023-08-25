@@ -8,12 +8,12 @@ import (
 )
 
 // Write implements Writer interface.
-func (w *FileWriter) Write(cert, priv []byte, certname, privname string) error {
+func (w *FileWriter) Write(cert, pkey []byte, certname, privname string) error {
 	err := w.writeAndChown(cert, certname)
 	if err != nil {
 		return err
 	}
-	return w.writeAndChown(priv, privname)
+	return w.writeAndChown(pkey, privname)
 }
 
 func (w *FileWriter) writeAndChown(raw []byte, output string) error {

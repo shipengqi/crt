@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"os"
 	"testing"
 	"time"
 
@@ -19,7 +20,7 @@ var filelist []string
 
 type mockwriter struct{}
 
-func (w *mockwriter) Write(cert, priv []byte, certname, privname string) error { return nil }
+func (w *mockwriter) Write(cert, priv []byte) error { return nil }
 
 func TestCertificateGenerator(t *testing.T) {
 	t.Run("FileWriter", func(t *testing.T) {
@@ -31,7 +32,10 @@ func TestCertificateGenerator(t *testing.T) {
 				g := generator.New()
 				filelist = append(filelist, caPath, caKeyPath)
 				cert := New(WithCAType())
-				err := g.CreateAndWrite(cert, caPath, caKeyPath)
+				cf, _ := os.Open(caPath)
+				pf, _ := os.Open(caKeyPath)
+				w := generator.NewFileWriter(cf, pf)
+				err := g.CreateAndWrite(w, cert)
 				assert.Nil(t, err)
 
 				parsedCert, err := parseCertFile(caPath)
@@ -46,7 +50,10 @@ func TestCertificateGenerator(t *testing.T) {
 				g := generator.New()
 				filelist = append(filelist, caPath, caKeyPath)
 				cert := NewCACert()
-				err := g.CreateAndWrite(cert, caPath, caKeyPath)
+				cf, _ := os.Open(caPath)
+				pf, _ := os.Open(caKeyPath)
+				w := generator.NewFileWriter(cf, pf)
+				err := g.CreateAndWrite(w, cert)
 				assert.Nil(t, err)
 
 				parsedCert, err := parseCertFile(caPath)
@@ -71,7 +78,11 @@ func TestCertificateGenerator(t *testing.T) {
 					WithKeyUsage(x509.KeyUsageDigitalSignature|x509.KeyUsageKeyEncipherment),
 					WithExtKeyUsages(x509.ExtKeyUsageServerAuth),
 				)
-				err := g.CreateAndWrite(cert, serverCrtPath, serverKeyPath)
+				cf, _ := os.Open(serverCrtPath)
+				pf, _ := os.Open(serverKeyPath)
+				w := generator.NewFileWriter(cf, pf)
+				err := g.CreateAndWrite(w, cert)
+
 				assert.Equal(t, "x509: CA certificate or private key is not provided",
 					err.Error())
 				reset()
@@ -84,7 +95,11 @@ func TestCertificateGenerator(t *testing.T) {
 					WithKeyUsage(x509.KeyUsageDigitalSignature|x509.KeyUsageKeyEncipherment),
 					WithExtKeyUsages(x509.ExtKeyUsageServerAuth),
 				)
-				err := g.CreateAndWrite(cert, serverCrtPath, serverKeyPath)
+				cf, _ := os.Open(serverCrtPath)
+				pf, _ := os.Open(serverKeyPath)
+				w := generator.NewFileWriter(cf, pf)
+				err := g.CreateAndWrite(w, cert)
+
 				assert.Nil(t, err)
 
 				parsedCert, err := parseCertFile(serverCrtPath)
@@ -100,7 +115,11 @@ func TestCertificateGenerator(t *testing.T) {
 				g := createGenWithCA(t)
 
 				cert := NewServerCert()
-				err := g.CreateAndWrite(cert, serverCrtPath, serverKeyPath)
+				cf, _ := os.Open(serverCrtPath)
+				pf, _ := os.Open(serverKeyPath)
+				w := generator.NewFileWriter(cf, pf)
+				err := g.CreateAndWrite(w, cert)
+
 				assert.Nil(t, err)
 
 				parsedCert, err := parseCertFile(serverCrtPath)
@@ -125,7 +144,11 @@ func TestCertificateGenerator(t *testing.T) {
 					WithKeyUsage(x509.KeyUsageDigitalSignature|x509.KeyUsageKeyEncipherment),
 					WithExtKeyUsages(x509.ExtKeyUsageClientAuth),
 				)
-				err := g.CreateAndWrite(cert, clientCrtPath, clientKeyPath)
+				cf, _ := os.Open(clientCrtPath)
+				pf, _ := os.Open(clientKeyPath)
+				w := generator.NewFileWriter(cf, pf)
+				err := g.CreateAndWrite(w, cert)
+
 				assert.Nil(t, err)
 
 				parsedCert, err := parseCertFile(clientCrtPath)
@@ -143,7 +166,10 @@ func TestCertificateGenerator(t *testing.T) {
 				g := createGenWithCA(t)
 
 				cert := NewClientCert()
-				err := g.CreateAndWrite(cert, clientCrtPath, clientKeyPath)
+				cf, _ := os.Open(clientCrtPath)
+				pf, _ := os.Open(clientKeyPath)
+				w := generator.NewFileWriter(cf, pf)
+				err := g.CreateAndWrite(w, cert)
 				assert.Nil(t, err)
 
 				parsedCert, err := parseCertFile(clientCrtPath)
@@ -155,29 +181,6 @@ func TestCertificateGenerator(t *testing.T) {
 				assert.Equal(t, parsedCert.NotBefore.Add(365*24*time.Hour), parsedCert.NotAfter)
 				reset()
 			})
-		})
-		t.Run("Create and Write with option", func(t *testing.T) {
-			g := createGenWithCA(t)
-
-			cert := NewClientCert()
-			keyg := key.NewEcdsaKey(nil)
-			crtRaw, keyRaw, err := g.CreateWithOptions(cert, generator.CreateOptions{G: keyg})
-			assert.Nil(t, err)
-
-			parsedCert, err := parseCertBytes(crtRaw)
-			assert.Nil(t, err)
-			assert.False(t, parsedCert.IsCA)
-
-			assert.Equal(t, "CRT GENERATOR CA", parsedCert.Issuer.CommonName)
-			assert.NotEmpty(t, parsedCert.Subject.CommonName)
-			assert.Equal(t, parsedCert.NotBefore.Add(365*24*time.Hour), parsedCert.NotAfter)
-			parsedKey, err := parseKeyBytes(keyRaw)
-			assert.Nil(t, err)
-			_, ok := parsedKey.(*ecdsa.PrivateKey)
-			assert.True(t, ok)
-
-			err = g.WriteWithOptions(crtRaw, keyRaw, "", "", generator.WriteOptions{W: &mockwriter{}})
-			assert.Nil(t, err)
 		})
 	})
 }

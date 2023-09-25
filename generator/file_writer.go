@@ -6,33 +6,27 @@ import (
 
 // FileWriter implements Writer interface.
 type FileWriter struct {
-	uid   int
-	gid   int
-	fmode os.FileMode
+	certf *os.File
+	prikf *os.File
 }
 
 // NewFileWriter creates a new FileWriter with default options.
-func NewFileWriter() *FileWriter {
+func NewFileWriter(certfile, prikfile *os.File) *FileWriter {
 	return &FileWriter{
-		uid:   os.Getuid(),
-		gid:   os.Getgid(),
-		fmode: os.FileMode(DefaultFileMode),
+		certf: certfile,
+		prikf: prikfile,
 	}
 }
 
-// SetUid set uid of the output file.
-//
-//nolint:revive
-func (w *FileWriter) SetUid(uid int) {
-	w.uid = uid
-}
-
-// SetGid set gid of the output file.
-func (w *FileWriter) SetGid(gid int) {
-	w.gid = gid
-}
-
-// SetFileMode set os.FileMode of the output file.
-func (w *FileWriter) SetFileMode(mode int) {
-	w.fmode = os.FileMode(mode)
+// Write implements Writer interface.
+func (w *FileWriter) Write(cert, prik []byte) error {
+	_, err := w.certf.Write(cert)
+	if err != nil {
+		return err
+	}
+	_, err = w.prikf.Write(prik)
+	if err != nil {
+		return err
+	}
+	return nil
 }

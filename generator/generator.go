@@ -11,11 +11,6 @@ import (
 	"github.com/shipengqi/crt/key"
 )
 
-// WriteOptions defines options for Writer.Write.
-type WriteOptions struct {
-	W Writer
-}
-
 // CreateOptions defines options for Generator.Create.
 // UseAsCA if true, the given crt.Certificate will be used as the CA
 // certificate for the Generator. If the crt.Certificate is not CA type,
@@ -28,17 +23,15 @@ type CreateOptions struct {
 
 // Generator is the main structure of a generator.
 type Generator struct {
-	keyG   key.Generator
-	writer Writer
-	ca     *x509.Certificate
-	caKey  crypto.PrivateKey
+	keyG  key.Generator
+	ca    *x509.Certificate
+	caKey crypto.PrivateKey
 }
 
 // New return a new certificate generator.
 func New(opts ...Option) *Generator {
 	g := &Generator{
-		writer: NewFileWriter(),
-		keyG:   key.NewRsaKey(key.RecommendedKeyLength),
+		keyG: key.NewRsaKey(key.RecommendedKeyLength),
 	}
 	g.withOptions(opts...)
 
@@ -66,23 +59,13 @@ func (g *Generator) CreateWithOptions(c *crt.Certificate, opts CreateOptions) (c
 	return g.create(c, opts)
 }
 
-// Write writes the certificate and key files by the Writer.
-func (g *Generator) Write(cert, pkey []byte, certname, pkeyname string) error {
-	return g.write(cert, pkey, certname, pkeyname, WriteOptions{})
-}
-
-// WriteWithOptions writes the certificate and key files by the Writer with the given WriteOptions.
-func (g *Generator) WriteWithOptions(cert, pkey []byte, certname, pkeyname string, opts WriteOptions) error {
-	return g.write(cert, pkey, certname, pkeyname, opts)
-}
-
 // CreateAndWrite creates a new X.509 v3 certificate and private key, then execute the Writer.Write.
-func (g *Generator) CreateAndWrite(c *crt.Certificate, certname, pkeyname string) error {
+func (g *Generator) CreateAndWrite(w Writer, c *crt.Certificate) error {
 	cert, pkey, err := g.Create(c)
 	if err != nil {
 		return err
 	}
-	return g.Write(cert, pkey, certname, pkeyname)
+	return w.Write(cert, pkey)
 }
 
 func (g *Generator) create(c *crt.Certificate, opts CreateOptions) (cert []byte, pkey []byte, err error) {
@@ -127,14 +110,6 @@ func (g *Generator) create(c *crt.Certificate, opts CreateOptions) (cert []byte,
 	}
 	cert = pem.EncodeToMemory(block)
 	return cert, pkey, nil
-}
-
-func (g *Generator) write(cert, pkey []byte, certname, pkeyname string, opts WriteOptions) error {
-	w := g.writer
-	if opts.W != nil {
-		w = opts.W
-	}
-	return w.Write(cert, pkey, certname, pkeyname)
 }
 
 // withOptions set options for the Generator.

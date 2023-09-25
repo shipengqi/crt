@@ -20,13 +20,6 @@ func (fn optionFunc) apply(g *Generator) {
 	fn(g)
 }
 
-// WithWriter is used to set the Writer of the Generator.
-func WithWriter(writer Writer) Option {
-	return optionFunc(func(g *Generator) {
-		g.writer = writer
-	})
-}
-
 // WithKeyGenerator is used to set the private key generator of the Generator.
 func WithKeyGenerator(keyG key.Generator) Option {
 	return optionFunc(func(g *Generator) {

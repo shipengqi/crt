@@ -28,11 +28,13 @@ func TestCertificateGenerator(t *testing.T) {
 				g := generator.New()
 				filelist = append(filelist, caPath, caKeyPath)
 				cert := New(WithCAType())
-				cf, _ := os.Create(caPath)
-				pf, _ := os.Create(caKeyPath)
+				cf, err := os.Create(caPath)
+				assert.NoError(t, err)
+				pf, err := os.Create(caKeyPath)
+				assert.NoError(t, err)
 				w := generator.NewFileWriter(cf, pf)
-				err := g.CreateAndWrite(w, cert)
-				// assert.Nil(t, err)
+				err = g.CreateAndWrite(w, cert)
+				assert.NoError(t, err)
 
 				parsedCert, err := parseCertFile(caPath)
 				assert.Nil(t, err)
@@ -46,10 +48,9 @@ func TestCertificateGenerator(t *testing.T) {
 				g := generator.New()
 				filelist = append(filelist, caPath, caKeyPath)
 				cert := NewCACert()
-				cf, _ := os.Create(caPath)
-				pf, _ := os.Create(caKeyPath)
-				w := generator.NewFileWriter(cf, pf)
-				err := g.CreateAndWrite(w, cert)
+				w, err := generator.NewFileWriterFromPaths(caPath, caKeyPath)
+				assert.NoError(t, err)
+				err = g.CreateAndWrite(w, cert)
 				assert.Nil(t, err)
 
 				parsedCert, err := parseCertFile(caPath)
@@ -74,10 +75,12 @@ func TestCertificateGenerator(t *testing.T) {
 					WithKeyUsage(x509.KeyUsageDigitalSignature|x509.KeyUsageKeyEncipherment),
 					WithExtKeyUsages(x509.ExtKeyUsageServerAuth),
 				)
-				cf, _ := os.Create(serverCrtPath)
-				pf, _ := os.Create(serverKeyPath)
+				cf, err := os.Create(serverCrtPath)
+				assert.NoError(t, err)
+				pf, err := os.Create(serverKeyPath)
+				assert.NoError(t, err)
 				w := generator.NewFileWriter(cf, pf)
-				err := g.CreateAndWrite(w, cert)
+				err = g.CreateAndWrite(w, cert)
 
 				assert.Equal(t, "x509: CA certificate or private key is not provided",
 					err.Error())
@@ -91,10 +94,12 @@ func TestCertificateGenerator(t *testing.T) {
 					WithKeyUsage(x509.KeyUsageDigitalSignature|x509.KeyUsageKeyEncipherment),
 					WithExtKeyUsages(x509.ExtKeyUsageServerAuth),
 				)
-				cf, _ := os.Create(serverCrtPath)
-				pf, _ := os.Create(serverKeyPath)
+				cf, err := os.Create(serverCrtPath)
+				assert.NoError(t, err)
+				pf, err := os.Create(serverKeyPath)
+				assert.NoError(t, err)
 				w := generator.NewFileWriter(cf, pf)
-				err := g.CreateAndWrite(w, cert)
+				err = g.CreateAndWrite(w, cert)
 
 				assert.Nil(t, err)
 
@@ -111,10 +116,9 @@ func TestCertificateGenerator(t *testing.T) {
 				g := createGenWithCA(t)
 
 				cert := NewServerCert()
-				cf, _ := os.Create(serverCrtPath)
-				pf, _ := os.Create(serverKeyPath)
-				w := generator.NewFileWriter(cf, pf)
-				err := g.CreateAndWrite(w, cert)
+				w, err := generator.NewFileWriterFromPaths(serverCrtPath, serverKeyPath)
+				assert.NoError(t, err)
+				err = g.CreateAndWrite(w, cert)
 
 				assert.Nil(t, err)
 
@@ -140,10 +144,12 @@ func TestCertificateGenerator(t *testing.T) {
 					WithKeyUsage(x509.KeyUsageDigitalSignature|x509.KeyUsageKeyEncipherment),
 					WithExtKeyUsages(x509.ExtKeyUsageClientAuth),
 				)
-				cf, _ := os.Create(clientCrtPath)
-				pf, _ := os.Create(clientKeyPath)
+				cf, err := os.Create(clientCrtPath)
+				assert.NoError(t, err)
+				pf, err := os.Create(clientKeyPath)
+				assert.NoError(t, err)
 				w := generator.NewFileWriter(cf, pf)
-				err := g.CreateAndWrite(w, cert)
+				err = g.CreateAndWrite(w, cert)
 
 				assert.Nil(t, err)
 
@@ -162,10 +168,9 @@ func TestCertificateGenerator(t *testing.T) {
 				g := createGenWithCA(t)
 
 				cert := NewClientCert()
-				cf, _ := os.Create(clientCrtPath)
-				pf, _ := os.Create(clientKeyPath)
-				w := generator.NewFileWriter(cf, pf)
-				err := g.CreateAndWrite(w, cert)
+				w, err := generator.NewFileWriterFromPaths(clientCrtPath, clientKeyPath)
+				assert.NoError(t, err)
+				err = g.CreateAndWrite(w, cert)
 				assert.Nil(t, err)
 
 				parsedCert, err := parseCertFile(clientCrtPath)

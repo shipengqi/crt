@@ -60,11 +60,12 @@ func (g *Generator) CreateWithOptions(c *crt.Certificate, opts CreateOptions) (c
 }
 
 // CreateAndWrite creates a new X.509 v3 certificate and private key, then execute the Writer.Write.
-func (g *Generator) CreateAndWrite(w Writer, c *crt.Certificate) error {
+func (g *Generator) CreateAndWrite(w WriteCloser, c *crt.Certificate) error {
 	cert, pkey, err := g.Create(c)
 	if err != nil {
 		return err
 	}
+	defer func() { _ = w.Close() }()
 	return w.Write(cert, pkey)
 }
 

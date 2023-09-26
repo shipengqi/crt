@@ -4,35 +4,56 @@ import (
 	"os"
 )
 
+var _ WriteCloser = &FileWriter{}
+
 // FileWriter implements Writer interface.
 type FileWriter struct {
-	uid   int
-	gid   int
-	fmode os.FileMode
+	certf *os.File
+	prikf *os.File
 }
 
-// NewFileWriter creates a new FileWriter with default options.
-func NewFileWriter() *FileWriter {
+// NewFileWriter creates a new FileWriter with certificate *os.File and private key *os.File.
+func NewFileWriter(certfile, prikfile *os.File) *FileWriter {
 	return &FileWriter{
-		uid:   os.Getuid(),
-		gid:   os.Getgid(),
-		fmode: os.FileMode(DefaultFileMode),
+		certf: certfile,
+		prikf: prikfile,
 	}
 }
 
-// SetUid set uid of the output file.
-//
-//nolint:revive
-func (w *FileWriter) SetUid(uid int) {
-	w.uid = uid
+// NewFileWriterFromPaths creates a new FileWriter with the given certificate and private key paths.
+func NewFileWriterFromPaths(certfile, prikfile string) (*FileWriter, error) {
+	certf, err := os.Create(certfile)
+	if err != nil {
+		return nil, err
+	}
+	prikf, err := os.Create(prikfile)
+	if err != nil {
+		return nil, err
+	}
+	return &FileWriter{
+		certf: certf,
+		prikf: prikf,
+	}, nil
 }
 
-// SetGid set gid of the output file.
-func (w *FileWriter) SetGid(gid int) {
-	w.gid = gid
+// Write implements Writer interface.
+func (fw *FileWriter) Write(cert, prik []byte) error {
+	_, err := fw.certf.Write(cert)
+	if err != nil {
+		return err
+	}
+	_, err = fw.prikf.Write(prik)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-// SetFileMode set os.FileMode of the output file.
-func (w *FileWriter) SetFileMode(mode int) {
-	w.fmode = os.FileMode(mode)
+// Close implements Closer interface.
+func (fw *FileWriter) Close() error {
+	err := fw.certf.Close()
+	if err != nil {
+		return err
+	}
+	return fw.prikf.Close()
 }

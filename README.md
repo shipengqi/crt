@@ -15,6 +15,7 @@ import (
 	"crypto/x509"
 	"log"
 	"net"
+	"os"
 	"time"
 
 	"github.com/shipengqi/crt"
@@ -61,7 +62,10 @@ func main() {
 	// generate Certificate Examples
 	
 	// generate CA certificate
-	err := g1.CreateAndWrite(caCrt, "ca.crt", "ca.key")
+	cf, _ := os.Create("ca.crt")
+	pf, _ := os.Create("ca.key")
+	w := generator.NewFileWriter(cf, pf)
+	err := g1.CreateAndWrite(w, caCrt)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -72,7 +76,8 @@ func main() {
 		UseAsCA: true,
 	})
 	// generate server certificate files
-	err = g1.CreateAndWrite(serverCrt, "server.crt", "server.key")
+	w, _ = generator.NewFileWriterFromPaths("server.crt", "server.key")
+	err = g1.CreateAndWrite(w, serverCrt)
 	if err != nil {
 		log.Fatalln(err)
 	}

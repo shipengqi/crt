@@ -76,9 +76,7 @@ func main() {
 		UseAsCA: true,
 	})
 	// generate server certificate files
-	cf, _ = os.Create("server.crt")
-	pf, _ = os.Create("server.key")
-	w := generator.NewFileWriter(cf, pf)
+	w, _ = generator.NewFileWriterFromPaths("server.crt", "server.key")
 	err = g1.CreateAndWrite(w, serverCrt)
 	if err != nil {
 		log.Fatalln(err)

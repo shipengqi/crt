@@ -1,6 +1,7 @@
 package crt_test
 
 import (
+	"bytes"
 	"crypto"
 	"crypto/ecdsa"
 	"crypto/rsa"
@@ -25,6 +26,15 @@ func parseCertFile(fpath string) (*x509.Certificate, error) {
 	return parseCertBytes(bs)
 }
 
+func parseMultiCertFromFile(fpath string) ([]*x509.Certificate, error) {
+	bs, err := os.ReadFile(fpath)
+	if err != nil {
+		return nil, err
+	}
+
+	return parseMultiCertBytes(bs)
+}
+
 func parseCertBytes(data []byte) (*x509.Certificate, error) {
 	if len(data) == 0 {
 		return nil, nil
@@ -38,6 +48,31 @@ func parseCertBytes(data []byte) (*x509.Certificate, error) {
 		return nil, err
 	}
 	return cert, nil
+}
+
+func parseMultiCertBytes(data []byte) ([]*x509.Certificate, error) {
+	var (
+		certs []*x509.Certificate
+		cert  *x509.Certificate
+		block *pem.Block
+		err   error
+	)
+
+	for len(data) > 0 {
+		data = bytes.TrimSpace(data)
+		block, data = pem.Decode(data)
+		// No PEM data is found
+		if block == nil {
+			break
+		}
+		cert, err = x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			return nil, err
+		}
+		certs = append(certs, cert)
+	}
+
+	return certs, nil
 }
 
 func parseKeyBytes(key []byte) (crypto.PrivateKey, error) {

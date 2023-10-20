@@ -15,10 +15,12 @@ import (
 // UseAsCA if true, the given crt.Certificate will be used as the CA
 // certificate for the Generator. If the crt.Certificate is not CA type,
 // UseAsCA will be ignored.
+// AppendCA if true, the CA certificate of the Generator will append to the result.
 type CreateOptions struct {
-	G       key.Generator
-	KeyOpts *key.MarshalOptions
-	UseAsCA bool
+	G        key.Generator
+	KeyOpts  *key.MarshalOptions
+	UseAsCA  bool
+	AppendCA bool
 }
 
 // Generator is the main structure of a generator.
@@ -110,6 +112,13 @@ func (g *Generator) create(c *crt.Certificate, opts CreateOptions) (cert []byte,
 		Bytes: v3crt,
 	}
 	cert = pem.EncodeToMemory(block)
+	if opts.AppendCA && g.ca != nil && g.ca != x509crt {
+		capem := pem.EncodeToMemory(&pem.Block{
+			Type:  "CERTIFICATE",
+			Bytes: g.ca.Raw,
+		})
+		cert = append(cert, capem...)
+	}
 	return cert, pkey, nil
 }
 

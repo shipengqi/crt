@@ -112,7 +112,7 @@ func (g *Generator) create(c *crt.Certificate, opts CreateOptions) (cert []byte,
 		Bytes: v3crt,
 	}
 	cert = pem.EncodeToMemory(block)
-	if opts.AppendCA && g.ca != nil && g.ca != ca {
+	if opts.AppendCA && g.ca != nil && g.ca != x509crt {
 		capem := pem.EncodeToMemory(&pem.Block{
 			Type:  "CERTIFICATE",
 			Bytes: g.ca.Raw,
